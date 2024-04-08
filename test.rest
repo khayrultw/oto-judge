@@ -1,0 +1,46 @@
+POST http://localhost:8080/register HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Khayrul",
+    "email": "email@email.com",
+    "password": "qwerqwer"
+}
+
+########
+
+POST http://localhost:8080/login HTTP/1.1
+content-type: application/json
+
+{
+    "email": "email@email.com",
+    "password": "qwerqwer"
+}
+
+############
+
+POST http://localhost:8080/code HTTP/1.1
+content-type: application/json
+
+{
+    "email": "email@email.com",
+    "user_id": 5,
+    "contest_id": 1,
+    "source_code": "value = int(input())\nprint(value*2)\rvalue = int(input())\nprint(value*2)",
+    "language": "py",
+    "problem_number": 0
+}
+
+#####
+
+GET http://localhost:8080/test/python
+
+#######
+
+GET http://localhost:8080/code/24
+
+#########
+GET  http://localhost:8080/logout
+
+######
+GET http://localhost:8080/store/u5_1fevdr2houkjb.py
