@@ -8,14 +8,14 @@ import (
 )
 
 func TestPython(c *gin.Context) {
-	status := judge.JudgeCode("judge/test/test.py", "judge/test/test.txt")
+	status := judge.JudgeCode("store/solutions/test.py", "store/test_cases/test0.txt")
 	c.JSON(http.StatusOK, gin.H{
 		"message": status,
 	})
 }
 
 func TestKotlin(c *gin.Context) {
-	status := judge.JudgeCode("judge/test/test.kt", "judge/test/test.txt")
+	status := judge.JudgeCode("store/solutions/test.kt", "store/test_cases/test.txt")
 	c.JSON(http.StatusOK, gin.H{
 		"message": status,
 	})

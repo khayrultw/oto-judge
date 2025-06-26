@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"github.com/khayrultw/go-judge/models"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-const DB_USERNAME = "root"
-const DB_PASSWORD = "R0r0n0a_z0r0"
-const DB_NAME = "qaz_gkh"
+const DB_USERNAME = "postgres"
+const DB_PASSWORD = "#R0r0n0a"
+const DB_NAME = "contests"
 const DB_HOST = "127.0.0.1"
-const DB_PORT = "3306"
+const DB_PORT = "5432"
 
 var Db *gorm.DB
 
@@ -22,12 +22,16 @@ func InitDb() {
 
 func connectDB() *gorm.DB {
 	var err error
-	dsn := DB_USERNAME + ":" + DB_PASSWORD + "@tcp(" + DB_HOST + ":" + DB_PORT + ")/" + DB_NAME + "?parseTime=true&loc=Local"
-	fmt.Println("dsn: ", dsn)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC", DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	db.AutoMigrate(&models.Code{})
-	db.AutoMigrate(&models.User{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	db.AutoMigrate(
+		&models.User{},
+		&models.Contest{},
+		&models.Problem{},
+		&models.Submission{},
+	)
 
 	fmt.Printf("Connected")
 

@@ -79,7 +79,7 @@ func (authController *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	token, jwtCreationError := createJWT(user.Email)
+	token, jwtCreationError := createJWT(user.Email, user.Id)
 
 	if jwtCreationError != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
@@ -87,9 +87,18 @@ func (authController *AuthController) Login(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", token, 3600, "", "", false, true)
+	c.SetCookie("Authorization", token, 86400, "", "", false, true)
 
-	c.JSON(http.StatusOK, gin.H{})
+	role := "user"
+	if user.IsAdmin {
+		role = "admin"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"id":    user.Id,
+		"name":  user.Name,
+		"email": user.Email,
+		"role":  role,
+	})
 }
 
 func NewAuthController() *AuthController {
@@ -97,15 +106,16 @@ func NewAuthController() *AuthController {
 	return &AuthController{Db: db}
 }
 
-func createJWT(email string) (string, error) {
+func createJWT(email string, userId uint) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["exp"] = time.Now().Add(time.Hour).Unix()
+	claims["user_id"] = userId
 	claims["email"] = email
 	tokenStr, err := token.SignedString(SECRET)
 
 	if err != nil {
-		fmt.Printf(err.Error())
+		fmt.Print(err.Error())
 		return "", err
 	}
 
@@ -150,5 +160,32 @@ func ValidateJWT(next func(w http.ResponseWriter, r *http.Request)) http.Handler
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("not authorized"))
 		}
+	})
+}
+
+// create an /me route that returns the current user information
+func (authController *AuthController) GetUser(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var user models.User
+	if err := authController.Db.First(&user, userId).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+		return
+	}
+
+	role := "user"
+	if user.IsAdmin {
+		role = "admin"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":    user.Id,
+		"name":  user.Name,
+		"email": user.Email,
+		"role":  role,
 	})
 }

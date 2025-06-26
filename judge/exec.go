@@ -4,53 +4,55 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
+
+	"github.com/khayrultw/go-judge/models"
 )
 
-func JudgeCode(sourceCodeFilePath string, testCaseFilePath string) string {
-	println(testCaseFilePath)
-	text, err := os.ReadFile(testCaseFilePath)
+func JudgeCode(sourceCodeFilePath string, testCaseFilePath string) models.Result {
+	// Read the test case file
+	content, err := os.ReadFile(testCaseFilePath)
 	if err != nil {
-		return err.Error()
+		return models.Result{Status: "ERROR", Message: "Test Case File Error"}
 	}
 
-	cases := strings.Split(string(text), "######\n")
+	// Split test cases by "-------" delimiter
+	testCases := strings.Split(string(content), "-------")
 
-	for i := 0; i < len(cases); i++ {
-		test := strings.Split(cases[0], "###\n")
-		out, err := runCode(test[0], sourceCodeFilePath)
-		if err != nil {
-			return err.Error()
+	for idx, tc := range testCases {
+		tc = strings.TrimSpace(tc)
+		if tc == "" {
+			continue
 		}
-		fmt.Println(test[1])
-		fmt.Println(out)
-		if out != test[1] {
-			return returnWrong(test[0], test[1], out)
+		parts := strings.Split(tc, "#######")
+		if len(parts) != 2 {
+			return models.Result{Status: "FAIL", Message: fmt.Sprintf("Test case %d: Invalid format", idx+1)}
+		}
+		input := strings.TrimSpace(parts[0])
+		expectedOutput := strings.TrimSpace(parts[1])
+
+		// Run the judge/test.sh script with source file and input string
+		cmd := exec.Command("judge/test.sh", sourceCodeFilePath, input)
+		out, _ := cmd.CombinedOutput()
+		actualOutput := strings.TrimSpace(string(out))
+
+		// Remove file paths from output for cleaner comparison
+		re := regexp.MustCompile(`\b(?:[a-zA-Z]:\\|/)?(?:[\w\-]+[\\/])+[\w\-.]+\b`)
+		cleanActual := strings.TrimSpace(re.ReplaceAllString(actualOutput, ""))
+		cleanExpected := strings.TrimSpace(re.ReplaceAllString(expectedOutput, ""))
+
+		if cleanActual != cleanExpected {
+			htmlMsg := fmt.Sprintf(
+				"Failed on Test Case %d\n\nInput:\n**text\n%s\n**\nOutput:\n**text\n%s\n**\nExpected:\n**text\n%s\n**",
+				idx+1,
+				input,
+				cleanActual,
+				cleanExpected,
+			)
+			return models.Result{Status: "FAIL", Message: htmlMsg}
 		}
 	}
 
-	return "Accepted"
-
-}
-
-func returnWrong(input string, expOut string, output string) string {
-	return "Wrong Answer" +
-		"\n\nInput:\n" + input +
-		"\n\nOutput:\n" + output +
-		"\n\nExpected Outout: " + expOut
-
-}
-
-func runCode(input string, sourceCodeFilePath string) (string, error) {
-	cmd := exec.Command("judge/test.sh", sourceCodeFilePath, input)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		//r := regexp.MustCompile("line*")
-		fmt.Printf("Runtime Error: %s\n", string(out))
-		fmt.Printf("Runtime Error: %s\n", string(err.Error()))
-		return "", err
-	}
-	fmt.Printf("Input:\n%s\n", input)
-	fmt.Printf("Outout:\n%s\n", string(out))
-	return string(out), nil
+	return models.Result{Status: "PASS", Message: ""}
 }

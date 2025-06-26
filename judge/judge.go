@@ -5,8 +5,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func RunTest(db *gorm.DB, code models.Code) {
-	status := JudgeCode("store/"+code.SourceCode, "judge/test/test.txt")
-	code.Status = status
-	db.Model(&code).Update("status", status)
+func RunTest(db *gorm.DB, submission models.Submission, problem models.Problem) {
+	result := JudgeCode("store/solutions/"+submission.SourceCode, problem.TestCasePath)
+	submission.Status = result.Status
+	submission.Message = result.Message
+	db.Model(&submission).Updates(map[string]interface{}{
+		"status":  result.Status,
+		"message": result.Message,
+	})
 }
