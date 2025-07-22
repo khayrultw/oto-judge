@@ -109,7 +109,7 @@ func NewAuthController() *AuthController {
 func createJWT(email string, userId uint) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(time.Hour).Unix()
+	claims["exp"] = time.Now().Add(24 * time.Hour).Unix()
 	claims["user_id"] = userId
 	claims["email"] = email
 	tokenStr, err := token.SignedString(SECRET)

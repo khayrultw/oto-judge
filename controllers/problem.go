@@ -27,6 +27,8 @@ func (pc *ProblemController) CreateProblem(c *gin.Context) {
 	contestIdStr := c.PostForm("contest_id")
 	problemNumberStr := c.PostForm("problem_number")
 
+	println(problemNumberStr)
+
 	contestId, err := strconv.ParseUint(contestIdStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid contest_id"})
@@ -38,11 +40,6 @@ func (pc *ProblemController) CreateProblem(c *gin.Context) {
 		return
 	}
 
-	statementFile, err := c.FormFile("statement")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Statement file is required"})
-		return
-	}
 	testcaseFile, err := c.FormFile("testcase")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Testcase file is required"})
@@ -52,21 +49,19 @@ func (pc *ProblemController) CreateProblem(c *gin.Context) {
 	uploadDir := "store"
 	os.MkdirAll(uploadDir, os.ModePerm)
 
-	statementPath := filepath.Join(uploadDir, fmt.Sprintf("problems/c_%d_p_%d_%s", contestId, problemNumber, filepath.Base(statementFile.Filename)))
 	testcasePath := filepath.Join(uploadDir, fmt.Sprintf("test_cases/c_%d_p_%d_%s", contestId, problemNumber, filepath.Base(testcaseFile.Filename)))
 
-	if err := c.SaveUploadedFile(statementFile, statementPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save statement file"})
-		return
-	}
 	if err := c.SaveUploadedFile(testcaseFile, testcasePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save testcase file"})
 		return
 	}
 
+	println(contestId, c.PostForm("title"))
+
 	problem := models.Problem{
 		ContestId:     uint(contestId),
-		StatementPath: statementPath,
+		Title:         c.PostForm("title"),
+		Statement:     c.PostForm("statement"),
 		TestCasePath:  testcasePath,
 		ProblemNumber: uint8(problemNumber),
 	}
@@ -99,39 +94,14 @@ func (pc *ProblemController) UpdateProblem(c *gin.Context) {
 		return
 	}
 
-	contestIdStr := c.PostForm("contest_id")
-	problemNumberStr := c.PostForm("problem_number")
-
-	if contestIdStr != "" {
-		contestId, err := strconv.ParseUint(contestIdStr, 10, 64)
-		if err == nil {
-			problem.ContestId = uint(contestId)
-		}
+	// Update title and description only
+	title := c.PostForm("title")
+	statement := c.PostForm("statement")
+	if title != "" {
+		problem.Title = title
 	}
-	if problemNumberStr != "" {
-		problemNumber, err := strconv.ParseUint(problemNumberStr, 10, 8)
-		if err == nil {
-			problem.ProblemNumber = uint8(problemNumber)
-		}
-	}
-
-	statementFile, err := c.FormFile("statement")
-	if err == nil {
-		uploadDir := "store/problems"
-		os.MkdirAll(uploadDir, os.ModePerm)
-		statementPath := filepath.Join(uploadDir, fmt.Sprintf("contest_%d_problem_%d_statement_%s", problem.ContestId, problem.ProblemNumber, filepath.Base(statementFile.Filename)))
-		if err := c.SaveUploadedFile(statementFile, statementPath); err == nil {
-			problem.StatementPath = statementPath
-		}
-	}
-	testcaseFile, err := c.FormFile("testcase")
-	if err == nil {
-		uploadDir := "store/problems"
-		os.MkdirAll(uploadDir, os.ModePerm)
-		testcasePath := filepath.Join(uploadDir, fmt.Sprintf("contest_%d_problem_%d_testcase_%s", problem.ContestId, problem.ProblemNumber, filepath.Base(testcaseFile.Filename)))
-		if err := c.SaveUploadedFile(testcaseFile, testcasePath); err == nil {
-			problem.TestCasePath = testcasePath
-		}
+	if statement != "" {
+		problem.Statement = statement
 	}
 
 	if err := pc.Db.Save(&problem).Error; err != nil {

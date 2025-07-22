@@ -107,85 +107,100 @@ func (sc *SubmissionController) GetSubmission(c *gin.Context) {
 // GetMySubmissions returns all submissions for the authenticated user
 func (sc *SubmissionController) GetMySubmissions(c *gin.Context) {
 	// Get user ID from JWT token
-	userId := c.GetUint("userId") // This will be set by the RequireAuth middleware
+	userId := c.GetUint("userId")
 
 	// Get contest ID from query parameter
 	contestId := c.Query("contest_id")
-	query := sc.Db.Where("user_id = ?", userId)
+
+	type Result struct {
+		models.Submission
+		ProblemTitle string
+	}
+
+	query := sc.Db.Table("submissions").
+		Select("submissions.*, problems.title as problem_title").
+		Joins("LEFT JOIN problems ON problems.id = submissions.problem_id").
+		Where("submissions.user_id = ?", userId)
 
 	if contestId != "" {
-		query = query.Where("contest_id = ?", contestId)
+		query = query.Where("submissions.contest_id = ?", contestId)
 	}
 
-	var submissions []models.Submission
-	err := query.Order("id desc").Find(&submissions).Error
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// for each submission, read the source code from the file
-	pwd, _ := os.Getwd()
-	for i := range submissions {
-		sourcePath := pwd + "/store/solutions/" + submissions[i].SourceCode
-		body, err := os.ReadFile(sourcePath)
-		if err == nil {
-			submissions[i].SourceCode = string(body)
-		} else {
-			submissions[i].SourceCode = ""
-		}
-	}
-
-	c.JSON(http.StatusOK, submissions)
-}
-
-type SubmissionWithProblem struct {
-	ID           uint      `json:"id"`
-	UserId       uint      `json:"user_id"`
-	ProblemId    uint      `json:"problem_id"`
-	ProblemTitle string    `json:"problem_title"`
-	Language     string    `json:"language"`
-	SourceCode   string    `json:"source_code"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-}
-
-// another endpoint to get all submissions for a specific problem
-func (sc *SubmissionController) GetAllSubmissions(c *gin.Context) {
-	var submissions []models.Submission
-	err := sc.Db.Order("id desc").Limit(50).Find(&submissions).Error
+	var results []Result
+	err := query.Order("submissions.id desc").Scan(&results).Error
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	pwd, _ := os.Getwd()
-	var result []SubmissionWithProblem
-	for _, sub := range submissions {
-		sourcePath := pwd + "/store/solutions/" + sub.SourceCode
+	var response []models.SubmissionWithProblem
+	for _, r := range results {
+		sourcePath := pwd + "/store/solutions/" + r.SourceCode
 		body, err := os.ReadFile(sourcePath)
 		sourceCode := ""
 		if err == nil {
 			sourceCode = string(body)
 		}
-
-		var problem models.Problem
-		problemTitle := ""
-		if err := sc.Db.Select("title").First(&problem, sub.ProblemId).Error; err == nil {
-			problemTitle = problem.Title
-		}
-
-		result = append(result, SubmissionWithProblem{
-			ID:           sub.Id,
-			UserId:       sub.UserId,
-			ProblemId:    sub.ProblemId,
-			ProblemTitle: problemTitle,
-			Language:     sub.Language,
+		response = append(response, models.SubmissionWithProblem{
+			ID:           r.Id,
+			UserId:       r.UserId,
+			UserName:     "", // Not needed for my submissions, or fetch if you want
+			ProblemId:    r.ProblemId,
+			ProblemTitle: r.ProblemTitle,
+			Language:     r.Language,
 			SourceCode:   sourceCode,
-			Status:       sub.Status,
-			CreatedAt:    sub.CreatedAt.Time,
+			Status:       r.Status,
+			Message:      r.Message,
+			CreatedAt:    r.CreatedAt,
 		})
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, response)
+}
+
+// another endpoint to get all submissions for a specific problem
+func (sc *SubmissionController) GetAllSubmissions(c *gin.Context) {
+	type Result struct {
+		models.Submission
+		UserName     string
+		ProblemTitle string
+	}
+
+	var results []Result
+	err := sc.Db.Table("submissions").
+		Select("submissions.*, users.name as user_name, problems.title as problem_title").
+		Joins("LEFT JOIN users ON users.id = submissions.user_id").
+		Joins("LEFT JOIN problems ON problems.id = submissions.problem_id").
+		Order("submissions.id desc").
+		Limit(50).
+		Scan(&results).Error
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	pwd, _ := os.Getwd()
+	var response []models.SubmissionWithProblem
+	for _, r := range results {
+		sourcePath := pwd + "/store/solutions/" + r.SourceCode
+		body, err := os.ReadFile(sourcePath)
+		sourceCode := ""
+		if err == nil {
+			sourceCode = string(body)
+		}
+		response = append(response, models.SubmissionWithProblem{
+			ID:           r.Id,
+			UserId:       r.UserId,
+			UserName:     r.UserName,
+			ProblemId:    r.ProblemId,
+			ProblemTitle: r.ProblemTitle,
+			Language:     r.Language,
+			SourceCode:   sourceCode,
+			Status:       r.Status,
+			CreatedAt:    r.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }

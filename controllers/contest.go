@@ -1,8 +1,8 @@
-// Create crud for contest using the contest model in models dir
 package controllers
 
 import (
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -186,8 +186,100 @@ func (cc *ContestController) GetContestSubmissions(c *gin.Context) {
 	c.JSON(http.StatusOK, submissions)
 }
 
-// GetContestStandings retrieves the standings for a specific contest
-// GetStandings returns the standings for a specific contest
+// Helper: Get problems for contest
+func (cc *ContestController) getProblemsForContest(contestId string) ([]models.Problem, map[uint]int, []uint, error) {
+	var problems []models.Problem
+	if err := cc.Db.Where("contest_id = ?", contestId).Order("id ASC").Find(&problems).Error; err != nil {
+		return nil, nil, nil, err
+	}
+	problemIds := make([]uint, len(problems))
+	problemIdToIndex := make(map[uint]int)
+	for idx, p := range problems {
+		problemIds[idx] = p.Id
+		problemIdToIndex[p.Id] = idx
+	}
+	return problems, problemIdToIndex, problemIds, nil
+}
+
+// Helper: Get all users
+func (cc *ContestController) getAllUsers() ([]models.User, map[uint]int, error) {
+	var users []models.User
+	if err := cc.Db.Find(&users).Error; err != nil {
+		return nil, nil, err
+	}
+	userIdx := make(map[uint]int)
+	for i, u := range users {
+		userIdx[u.Id] = i
+	}
+	return users, userIdx, nil
+}
+
+// Helper: Get submissions for contest window
+func (cc *ContestController) getSubmissionsForContest(problemIds []uint, contestId string, start, end time.Time) ([]models.Submission, error) {
+	var submissions []models.Submission
+	if err := cc.Db.Where(
+		"problem_id IN ? AND contest_id = ? AND created_at >= ? AND created_at <= ?",
+		problemIds, contestId, start, end,
+	).Order("created_at asc").Find(&submissions).Error; err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+// Helper: Fill standings
+func fillStandings(standings []models.UserStanding, submissions []models.Submission, userIdx map[uint]int, problemIdToIndex map[uint]int, start time.Time) {
+	solvedMap := make(map[[2]uint]bool)
+	for _, sub := range submissions {
+		ui, ok1 := userIdx[sub.UserId]
+		pi, ok2 := problemIdToIndex[sub.ProblemId]
+		if !ok1 || !ok2 {
+			continue
+		}
+		key := [2]uint{sub.UserId, sub.ProblemId}
+		pa := &standings[ui].Problems[pi]
+		if solvedMap[key] {
+			continue
+		}
+		pa.Count++
+		if sub.Status == "PASS" {
+			pa.Status = "+"
+			standings[ui].Solved++
+			penalty := int(sub.CreatedAt.Time.Sub(start).Seconds())
+			standings[ui].Penalty += penalty
+			solvedMap[key] = true
+		} else {
+			pa.Status = "-"
+		}
+	}
+	for i := range standings {
+		for j := range standings[i].Problems {
+			if standings[i].Problems[j].Count == 0 {
+				standings[i].Problems[j].Status = ""
+			}
+		}
+	}
+}
+
+// Helper: Sort and rank standings
+func sortAndRankStandings(standings []models.UserStanding) {
+	sort.SliceStable(standings, func(i, j int) bool {
+		if standings[i].Solved != standings[j].Solved {
+			return standings[i].Solved > standings[j].Solved
+		}
+		return standings[i].Penalty < standings[j].Penalty
+	})
+	currentRank := 1
+	for i := range standings {
+		if i > 0 && standings[i].Solved == standings[i-1].Solved && standings[i].Penalty == standings[i-1].Penalty {
+			standings[i].Rank = standings[i-1].Rank
+		} else {
+			standings[i].Rank = currentRank
+		}
+		currentRank++
+	}
+}
+
+// Main: GetStandings
 func (cc *ContestController) GetStandings(c *gin.Context) {
 	contestId := c.Param("contestId")
 
@@ -198,70 +290,49 @@ func (cc *ContestController) GetStandings(c *gin.Context) {
 		return
 	}
 
-	// Calculate contest start and end time
-	start := contest.StartTime.Time
-	end := start.Add(time.Duration(contest.Duration) * time.Minute)
+	// Always use UTC for start and end
+	start := contest.StartTime.Time.UTC()
+	end := start.Add(time.Duration(contest.Duration) * time.Minute).UTC()
 
-	// Get problems for contest
-	var problems []models.Problem
-	if err := cc.Db.Where("contest_id = ?", contestId).Order("id ASC").Find(&problems).Error; err != nil {
+	// Get problems
+	problems, problemIdToIndex, problemIds, err := cc.getProblemsForContest(contestId)
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve problems"})
 		return
 	}
-	problemIds := make([]uint, len(problems))
-	problemIdToIndex := make(map[uint]int)
-	for idx, p := range problems {
-		problemIds[idx] = p.Id
-		problemIdToIndex[p.Id] = idx
-	}
 
-	// Get all users
-	var users []models.User
-	if err := cc.Db.Find(&users).Error; err != nil {
+	// Get users
+	users, userIdx, err := cc.getAllUsers()
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	type UserStanding struct {
-		UserId   uint   `json:"user_id"`
-		UserName string `json:"user_name"`
-		Solved   int    `json:"solved"`
-		Problems []bool `json:"problems"`
-	}
-
 	// Prepare standings
-	standings := make([]UserStanding, len(users))
+	standings := make([]models.UserStanding, len(users))
 	for i, user := range users {
-		standings[i] = UserStanding{
+		standings[i] = models.UserStanding{
 			UserId:   user.Id,
 			UserName: user.Name,
-			Problems: make([]bool, len(problems)),
+			Problems: make([]models.ProblemAttempt, len(problems)),
+		}
+		for j, p := range problems {
+			standings[i].Problems[j].ProblemNumber = p.ProblemNumber
 		}
 	}
 
-	// Get accepted submissions ONLY during contest window
-	var submissions []models.Submission
-	if err := cc.Db.Where(
-		"problem_id IN ? AND status = ? AND created_at >= ? AND created_at <= ?",
-		problemIds, "PASS", start, end,
-	).Find(&submissions).Error; err != nil {
+	// Get submissions (pass UTC times)
+	submissions, err := cc.getSubmissionsForContest(problemIds, contestId, start, end)
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Fill standings
-	userIdx := make(map[uint]int)
-	for i, u := range users {
-		userIdx[u.Id] = i
-	}
-	for _, sub := range submissions {
-		ui, ok1 := userIdx[sub.UserId]
-		pi, ok2 := problemIdToIndex[sub.ProblemId]
-		if ok1 && ok2 && !standings[ui].Problems[pi] {
-			standings[ui].Problems[pi] = true
-			standings[ui].Solved++
-		}
-	}
+	fillStandings(standings, submissions, userIdx, problemIdToIndex, start)
+
+	// Sort and rank
+	sortAndRankStandings(standings)
 
 	c.JSON(http.StatusOK, standings)
 }

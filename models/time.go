@@ -76,3 +76,7 @@ func (ft CustomTime) Value() (driver.Value, error) {
 	}
 	return ft.Time, nil
 }
+
+func GetCurrentTime() CustomTime {
+	return CustomTime{Time: time.Now().UTC()}
+}

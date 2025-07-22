@@ -15,7 +15,7 @@ func TestPython(c *gin.Context) {
 }
 
 func TestKotlin(c *gin.Context) {
-	status := judge.JudgeCode("store/solutions/test.kt", "store/test_cases/test.txt")
+	status := judge.JudgeCode("store/solutions/test.kt", "store/test_cases/test0.txt")
 	c.JSON(http.StatusOK, gin.H{
 		"message": status,
 	})

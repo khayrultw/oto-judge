@@ -19,7 +19,7 @@ content-type: application/json
 
 ############
 
-POST http://localhost:8080/submission HTTP/1.1
+POST http://localhost:8080/test/python HTTP/1.1
 content-type: application/json
 
 {
