@@ -1,0 +1,69 @@
+POST http://localhost:8080/register HTTP/1.1
+content-type: application/json
+
+{
+    "name": "",
+    "email": "",
+    "password": ""
+}
+
+############
+POST http://localhost:8080/update-user HTTP/1.1
+content-type: application/json
+
+{
+    "name": "",
+    "email": "",
+    "password": ""
+}
+
+########
+
+POST http://localhost:8080/login HTTP/1.1
+content-type: application/json
+
+{
+    "email": "test@em.com",
+    "password": "qazwsx"
+}
+
+############
+
+POST http://localhost:8080/test/python HTTP/1.1
+content-type: application/json
+
+{
+    "user_id": 1,
+    "contest_id": 1,
+    "source_code": "value = int(input())\nprint(value*2)\rvalue = int(input())\nprint(value*3)",
+    "language": "py",
+    "problem_number": 0
+}
+
+######### create contest type Contest struct {
+POST http://localhost:8080/contest HTTP/1.1
+content-type: application/json
+
+{
+    "title": "Test Contest",
+    "desc": "This is a test contest",
+    "start_time": "2025-10-01T00:00:00Z"
+}
+
+#####
+
+GET http://localhost:8080/api/test/python
+
+
+######
+GET http://localhost:8080/test/kotlin
+
+#######
+
+GET http://localhost:8080/submission/11
+
+#########
+GET  http://localhost:8080/logout
+
+######
+GET http://localhost:8080/store/u5_1fevdr2houkjb.py
