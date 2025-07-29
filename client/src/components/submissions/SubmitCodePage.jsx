@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import repo from '../data/Repo';
+import repo from '../../data/Repo';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 function SubmitCodePage() {

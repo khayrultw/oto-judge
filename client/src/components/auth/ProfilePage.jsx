@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '../../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
-import repo from '../data/Repo';
+import repo from '../../data/Repo';
 
 const ProfilePage = () => {
   const { user, clearUser } = useUser();

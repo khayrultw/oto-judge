@@ -1,21 +1,21 @@
 import { BrowserRouter as Router, Route, Routes, Outlet, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
-import HomePage from './components/HomePage';
-import ProblemDetailsPage from './components/ProblemDetailsPage';
-import SubmissionsPage from './components/SubmissionsPage';
-import StandingsPage from './components/StandingsPage';
-import SubmitCodePage from './components/SubmitCodePage';
-import ContestsPage from './components/ContestsPage';
-import ContestDetailsPage from './components/ContestDetailsPage';
-import ViewContest from './components/ViewContest';
-import LoginPage from './components/LoginPage';
-import RegistrationPage from './components/RegistrationPage';
-import ProfilePage from './components/ProfilePage';
+import HomePage from './components/home/HomePage';
+import ProblemDetailsPage from './components/contests/ProblemDetailsPage';
+import SubmissionsPage from './components/submissions/SubmissionsPage';
+import StandingsPage from './components/standings/StandingsPage';
+import SubmitCodePage from './components/submissions/SubmitCodePage';
+import ContestsPage from './components/contests/ContestsPage';
+import ContestDetailsPage from './components/contests/ContestDetailsPage';
+import ViewContest from './components/contests/ViewContest';
+import LoginPage from './components/auth/LoginPage';
+import RegistrationPage from './components/auth/RegistrationPage';
+import ProfilePage from './components/auth/ProfilePage';
 import { UserProvider, useUser } from "./contexts/UserContext";
 import repo from './data/Repo';
-import ContestSubmissions from './components/ContestSubmissions';
-import MyContestSubmissions from './components/MyContestSubmissions';
+import ContestSubmissions from './components/contests/ContestSubmissions';
+import MyContestSubmissions from './components/contests/MyContestSubmissions';
 
 // Loading component
 const LoadingSpinner = () => (
@@ -87,7 +87,9 @@ function AppContent() {
       <div className="flex min-h-screen">
         <Sidebar />
         {/* Navbar is now fixed at the top, so add margin-top to content */}
-        <div className="flex-grow p-2 md:p-0 bg-gray-100 mt-[58px]" style={{ marginTop: '58px' }}>
+        <Sidebar />
+          <div className="flex-grow p-2 md:p-4 bg-gray-100 
+                ml-12 md:ml-64 transition-all duration-200">
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />

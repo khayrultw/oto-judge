@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
-import repo, { BASE_URL, key } from '../data/Repo';
+import { useParams } from 'react-router-dom';
 import Markdown from 'react-markdown';
-import SubmissionsList from "./SubmissionList";
+import SubmissionsList from '../submissions/SubmissionList';
+import repo, { BASE_URL, key } from '../../data/Repo';
 
-
-function MySubmissionsList({ onDetails }) {
+function ContestSubmissions() {
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { contestId } = useParams();
 
-
-  useEffect(() => {
+    useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const res = await repo.getMySubmissions();
+        const res = await repo.getContestSubmissions(contestId);
         setSubmissions(res.data);
         setError('');
       } catch (err) {
@@ -24,27 +25,21 @@ function MySubmissionsList({ onDetails }) {
     };
     fetchSubmissions();
 
-    const q = localStorage.getItem(key)
-    const es = new EventSource(BASE_URL + "/submissions/sse/my?q=" + q)
-    es.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setSubmissions(data);
-      } catch (err) {
-        console.error("Bad JSON:", err);
+      const q = localStorage.getItem(key)
+      const es = new EventSource(BASE_URL + `/contests/${contestId}/sse?q=${q}`)
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setSubmissions(data);
+        } catch (err) {
+          console.error("Bad JSON:", err);
+        }
       }
-    }
 
-    return () => {
-      es.close();
-    };
+      return () => {
+        es.close();
+      };
   }, []);
-
-  return <SubmissionsList submissions={submissions} loading={loading} error={error} onDetails={onDetails} />;
-}
-
-function SubmissionsPage() {
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
 
   const handleDetails = (submission) => {
     setSelectedSubmission(submission);
@@ -56,11 +51,12 @@ function SubmissionsPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl mb-4 text-center">My Submissions</h1>
-      <MySubmissionsList onDetails={handleDetails} />
+      <h1 className="text-2xl mb-4 text-center">Contest Submissions</h1>
+
+      <SubmissionsList submissions={submissions} loading={loading} error={error} onDetails={handleDetails} />;
      
       {/* Details Popup  */}
-      {selectedSubmission && (  
+      {selectedSubmission && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center overflow-y-auto"
           onClick={handleClosePopup}
@@ -98,4 +94,4 @@ function SubmissionsPage() {
   );
 }
 
-export default SubmissionsPage;
+export default ContestSubmissions;

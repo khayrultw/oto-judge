@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import repo from '../data/Repo';
+import repo from '../../data/Repo';
 
 function HomePage() {
   const [upcomingContests, setUpcomingContests] = useState([]);
@@ -82,7 +82,7 @@ function HomePage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Contests</h1>
       {error && (
         <div className="text-red-500 text-center p-4 bg-red-50 rounded-lg">{error}</div>

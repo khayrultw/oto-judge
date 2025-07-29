@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import repo from '../data/Repo';
-import { useUser } from '../contexts/UserContext';
+import repo from '../../data/Repo';
+import { useUser } from '../../contexts/UserContext';
 
 // Converts 'YYYY-MM-DDTHH:mm' (local) to a UTC ISO string
 const localToUTC = (localDateTime) => {
@@ -192,18 +192,20 @@ const ContestsPage = () => {
                 <td className="py-2 px-4 border-b">{contest.duration}</td>
                 {user.role === 'admin' && (
                   <td className="py-2 px-4 border-b">
-                    <button
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mr-3"
-                      onClick={(e) => handleEditClick(e, contest)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      onClick={e => handleDeleteContest(e, contest.id)}
-                    >
-                      Delete
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                        onClick={(e) => handleEditClick(e, contest)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                        onClick={e => handleDeleteContest(e, contest.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 )}
               </tr>

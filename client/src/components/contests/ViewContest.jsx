@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import repo from '../data/Repo';
+import repo from '../../data/Repo';
 
 function ViewContest() {
   const { id } = useParams();
@@ -60,30 +60,31 @@ function ViewContest() {
   };
 
   return (
-    <div className="md:px-8 py-8 text-xs md:text-base max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-2">
-      <h1 className="font-bold text-lg">{contest.title}</h1>
-      <div className="flex space-x-2">
-        <button
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          onClick={() => navigate(`/contest/${id}/submissions`)}
-        >
-          Submissions
-        </button>
-        <button 
-          className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-          onClick={() => navigate(`/contest/${id}/submissions/my`)}
-        >
-          My Submissions
-        </button>
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          onClick={() => navigate(`/standings/${id}`)}
-        >
-          Standings
-        </button>
+    <div className="md:px-8 py-4 text-xs md:text-base max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+        <h1 className="font-bold text-lg mr-2 mb-2 sm:mb-0">{contest.title}</h1>
+
+        <div className="flex flex-row space-x-2">
+          <button
+            className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+            onClick={() => navigate(`/contest/${id}/submissions`)}
+          >
+            Submissions
+          </button>
+          <button 
+            className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+            onClick={() => navigate(`/contest/${id}/submissions/my`)}
+          >
+            MySubmissions
+          </button>
+          <button
+            className="bg-blue-500 text-white px-2  py-1 rounded hover:bg-blue-600"
+            onClick={() => navigate(`/standings/${id}`)}
+          >
+            Standings
+          </button>
+        </div>
       </div>
-    </div>
       <div className="mb-2 text-gray-600">
         <strong>Start Time:</strong> {contest.start_time && new Date(contest.start_time).toLocaleString()}
       </div>

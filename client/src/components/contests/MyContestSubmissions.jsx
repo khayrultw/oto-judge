@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Markdown from 'react-markdown';
-import SubmissionsList from './SubmissionList';
-import repo, { BASE_URL, key } from '../data/Repo';
+import SubmissionsList from '../submissions/SubmissionList';
+import repo, { BASE_URL, key } from '../../data/Repo';
 
 function MyContestSubmissions() {
   const [selectedSubmission, setSelectedSubmission] = useState(null);

@@ -8,7 +8,7 @@ ERROR_OUTPUT=$(mktemp /tmp/error_output-XXXXXX)
 case "$LANG" in
     cpp) RUN_CMD="$COMPILED_CODE" ;;
     py) RUN_CMD="python3 $COMPILED_CODE" ;;
-    kt) RUN_CMD="java -jar $COMPILED_CODE" ;;
+    kt) RUN_CMD="java -Xmx256m -XX:CompressedClassSpaceSize=128m -XX:ReservedCodeCacheSize=64m -jar $COMPILED_CODE" ;;
     js) RUN_CMD="node $COMPILED_CODE" ;;
     *) RUN_CMD="$COMPILED_CODE" ;;
 esac
@@ -19,7 +19,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-actual_output=$(timeout 5s bash -c "ulimit -v 4194304; echo -e \"$INPUT_STRING\" | $RUN_CMD" 2>"$ERROR_OUTPUT")
+actual_output=$(timeout 5s bash -c "ulimit -v 1572864; echo -e \"$INPUT_STRING\" | $RUN_CMD" 2>"$ERROR_OUTPUT")
 exit_code=$?
 
 if [[ $exit_code -eq 124 ]]; then

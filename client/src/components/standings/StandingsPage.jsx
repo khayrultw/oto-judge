@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import repo, { BASE_URL, key } from '../data/Repo';
+import repo, { BASE_URL, key } from '../../data/Repo';
 import { useParams } from 'react-router-dom';
 import StandingsTable from './StandingsTable';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import repo from '../data/Repo';
-import { useUser } from '../contexts/UserContext';
+import repo from '../../data/Repo';
+import { useUser } from '../../contexts/UserContext';
 
 const baseURL = '/api';
 

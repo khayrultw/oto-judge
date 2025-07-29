@@ -1,49 +1,53 @@
 import { Link, useLocation } from 'react-router-dom';
-import { UserIcon } from '@heroicons/react/24/outline';
+import { UserIcon, HomeIcon, ClipboardDocumentIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { useUser } from '../contexts/UserContext';
 
-function Navbar() {
+function Sidebar() {
   const { user } = useUser();
   const isLoggedIn = !!user && !!user.role;
-  const isAdmin = user.role === 'admin';
+  const isAdmin = user?.role === 'admin';
   const location = useLocation();
 
-  const isActive = (path) => location.pathname === path;
+  if (!isLoggedIn) return null;
+
+  const isActive = (path) => {
+    if (path === '/' && (location.pathname === '/' || location.pathname === '')) return true;
+    return location.pathname === path;
+  };
 
   const linkClass = (path) =>
-    `flex items-center space-x-1 md:space-x-2 hover:text-blue-300 ${
-      isActive(path) ? 'text-blue-400 font-semibold' : ''
+    `flex items-center space-x-2 p-2 rounded hover:bg-gray-700 ${
+      isActive(path) ? 'bg-gray-700 text-blue-400 font-semibold' : ''
     }`;
 
   return (
-    <nav className="w-full bg-gray-800 text-white flex flex-row items-center px-4 md:px-6 py-3 shadow-md fixed top-0 left-0 z-50">
-      <div className="flex flex-row items-center flex-1 space-x-2 md:space-x-6 text-xs md:text-sm">
-        {isLoggedIn && (
-          <Link to="/" className={linkClass('/')}>
-            <span>Home</span>
-          </Link>
-        )}
-        {isLoggedIn && isAdmin && (
-          <Link to="/contests" className={linkClass('/contests')}>
-            <span>Contests</span>
-          </Link>
-        )}
-        {isLoggedIn && (
-          <Link to="/submissions" className={linkClass('/submissions')}>
-            <span>Submissions</span>
-          </Link>
-        )}
-      </div>
+    <aside className="fixed top-0 left-0 h-screen bg-gray-800 text-white shadow-md 
+                  flex flex-col items-center md:items-start 
+                  w-12 md:w-64 p-0 md:p-4 space-y-2 md:space-y-4">
+      
+      <Link to="/" className={linkClass('/')}>
+        <HomeIcon className="h-6 w-6" />
+        <span className="hidden md:inline">Home</span>
+      </Link>
 
-      {isLoggedIn && (
-        <div className="flex items-center">
-          <Link to="/profile" className={linkClass('/profile')}>
-            <UserIcon className="h-6 w-6" />
-          </Link>
-        </div>
+      {isAdmin && (
+        <Link to="/contests" className={linkClass('/contests')}>
+          <PencilSquareIcon className="h-6 w-6" />
+          <span className="hidden md:inline">Contests</span>
+        </Link>
       )}
-    </nav>
+
+      <Link to="/submissions" className={linkClass('/submissions')}>
+        <ClipboardDocumentIcon className="h-6 w-6" />
+        <span className="hidden md:inline">Submissions</span>
+      </Link>
+
+      <Link to="/profile" className={linkClass('/profile')}>
+        <UserIcon className="h-6 w-6" />
+        <span className="hidden md:inline">Profile</span>
+      </Link>
+    </aside>
   );
 }
 
-export default Navbar;
+export default Sidebar;
