@@ -8,13 +8,13 @@ content-type: application/json
 }
 
 ############
-POST http://localhost:8080/update-user HTTP/1.1
+POST http://localhost:2931/update-user HTTP/1.1
 content-type: application/json
 
 {
-    "name": "",
-    "email": "",
-    "password": ""
+    "name": "Dominic",
+    "email": "weizhedominic24f@forward.edu.my",
+    "password": "qwertyqwerty"
 }
 
 ########

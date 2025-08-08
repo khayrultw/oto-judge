@@ -15,7 +15,11 @@ const SubmissionsList = ({ submissions = [], loading, error, onDetails }) => {
           </div>
           <div className="text-left font-bold truncate flex-1 md:ml-2 text-sm px-2">{submission.user_name}</div>
           <div className="text-left text-gray-500 truncate flex-1 text-sm px-2">{submission.created_at || submission.submitted_time}</div>
-          <div className={`text-left font-bold min-w-[8rem] text-sm px-2 ${submission.status === 'PASS' ? 'text-green-500' : 'text-red-500'}`}>{submission.status}</div>
+         <div className={`text-left font-bold w-40 break-words text-sm px-2 
+              ${submission.status === 'PASS' ? 'text-green-500' : 'text-red-500'}`}
+          >
+            {submission.status}
+          </div>
           <button
             className="text-blue-500 underline text-center text-sm w-full md:w-20 px-0 py-0"
             style={{minWidth: 0}}

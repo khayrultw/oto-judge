@@ -16,6 +16,7 @@ import { UserProvider, useUser } from "./contexts/UserContext";
 import repo from './data/Repo';
 import ContestSubmissions from './components/contests/ContestSubmissions';
 import MyContestSubmissions from './components/contests/MyContestSubmissions';
+import GuidelinePage from './components/Guideline';
 
 // Loading component
 const LoadingSpinner = () => (
@@ -81,15 +82,18 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
 
 function AppContent() {
   const { user, _ } = useUser();
+  const isLoggedIn = user && user.id;
 
   return (
     <Router>
-      <div className="flex min-h-screen">
-        <Sidebar />
-        {/* Navbar is now fixed at the top, so add margin-top to content */}
-        <Sidebar />
-          <div className="flex-grow p-2 md:p-4 bg-gray-100 
-                ml-12 md:ml-64 transition-all duration-200">
+        <div className="flex min-h-screen">
+          {isLoggedIn && <Sidebar />}
+
+          <div
+            className={`flex-grow p-2 md:p-4 bg-gray-100 transition-all duration-200 ${
+              isLoggedIn ? "ml-12 md:ml-64" : ""
+            }`}
+          >
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
@@ -108,6 +112,7 @@ function AppContent() {
               <Route path="/contest/:contestId/submissions" element={<ContestSubmissions />} />
               <Route path="/contest/:contestId/submissions/my" element={<MyContestSubmissions />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/guidelines" element={<GuidelinePage />} />
             </Route>
 
             {/* Catch all route - redirect to home or login */}

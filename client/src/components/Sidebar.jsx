@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { UserIcon, HomeIcon, ClipboardDocumentIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { UserIcon, HomeIcon, ClipboardDocumentIcon, PencilSquareIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useUser } from '../contexts/UserContext';
 
 function Sidebar() {
@@ -40,6 +40,11 @@ function Sidebar() {
       <Link to="/submissions" className={linkClass('/submissions')}>
         <ClipboardDocumentIcon className="h-6 w-6" />
         <span className="hidden md:inline">Submissions</span>
+      </Link>
+
+      <Link to="/guidelines" className={linkClass('/guidelines')}>
+        <InformationCircleIcon className="h-6 w-6" />
+        <span className="hidden md:inline">Guidelines</span>
       </Link>
 
       <Link to="/profile" className={linkClass('/profile')}>

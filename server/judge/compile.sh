@@ -4,14 +4,14 @@ SRC_FILE=$(mktemp /tmp/code-XXXXXX.$2)
 COMPILE_ERROR=$(mktemp /tmp/compile_error-XXXXXX)
 
 case "$2" in
-    cpp) EXT="cpp" ;;
-    py) EXT="py" ;;
-    kt) EXT="jar" ;;
-    js) EXT="js" ;;
-    *) EXT="txt" ;;
+    cpp) EXT="" ;;
+    py) EXT=".py" ;;
+    kt) EXT=".kexe" ;;
+    js) EXT=".js" ;;
+    *) EXT=".txt" ;;
 esac
 
-COMPILED_CODE=$(mktemp /tmp/code-XXXXXX.$EXT)
+COMPILED_CODE=$(mktemp /tmp/code-XXXXXX$EXT)
 
 cleanup() {
     [[ -f "$SRC_FILE" ]] && rm -f "$SRC_FILE"
@@ -40,7 +40,7 @@ elif [[ $SRC_FILE == *.py ]]; then
     fi
 
 elif [[ $SRC_FILE == *.kt ]]; then 
-    kotlinc "$SRC_FILE" -include-runtime -d "$COMPILED_CODE" 2>"$COMPILE_ERROR"
+    kotlinc-native "$SRC_FILE" -o "$COMPILED_CODE" 2>"$COMPILE_ERROR"
     
     if [[ $? -ne 0 ]]; then 
         cat "$COMPILE_ERROR" >&2
@@ -48,6 +48,7 @@ elif [[ $SRC_FILE == *.kt ]]; then
     fi
 
 elif [[ $SRC_FILE == *.js ]]; then
+    echo "$1" > "$COMPILED_CODE"
     node --check "$SRC_FILE" 2>"$COMPILE_ERROR"
 
     if [[ $? -ne 0 ]]; then 

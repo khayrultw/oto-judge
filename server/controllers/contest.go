@@ -387,26 +387,31 @@ func (cc *ContestController) getSubmissionsForContest(problemIds []uint, contest
 	return submissions, nil
 }
 
-func fillStandings(standings []models.UserStanding, submissions []models.Submission, userIdx map[uint]int, problemIdToIndex map[uint]int, start time.Time) {
+func fillStandings(standings []models.UserStanding, submissions []models.Submission, userIdx map[uint]int, problemIdToIndex map[uint]int, start, end time.Time) {
 	solvedMap := make(map[[2]uint]bool)
 	for _, sub := range submissions {
-		ui, ok1 := userIdx[sub.UserId]
-		pi, ok2 := problemIdToIndex[sub.ProblemId]
+		uid, ok1 := userIdx[sub.UserId]
+		pid, ok2 := problemIdToIndex[sub.ProblemId]
 		if !ok1 || !ok2 {
 			continue
 		}
 		key := [2]uint{sub.UserId, sub.ProblemId}
-		pa := &standings[ui].Problems[pi]
+		pa := &standings[uid].Problems[pid]
 		if solvedMap[key] {
 			continue
 		}
 		pa.Count++
 		if sub.Status == "PASS" {
 			pa.Status = "+"
-			standings[ui].Solved++
+			standings[uid].Solved++
 			penalty := int(sub.CreatedAt.Time.Sub(start).Seconds())
-			standings[ui].Penalty += penalty
+			standings[uid].Penalty += penalty
 			solvedMap[key] = true
+			if sub.CreatedAt.Before(end) {
+				standings[uid].Problems[pid].Color = "#28a745"
+			} else {
+				standings[uid].Problems[pid].Color = "#ffc107"
+			}
 		} else {
 			pa.Status = "-"
 		}
@@ -497,6 +502,7 @@ func (cc *ContestController) getStandings(contestId string) ([]models.UserStandi
 	}
 
 	start := contest.StartTime.Time.UTC()
+	end := contest.StartTime.UTC().Add(time.Duration(contest.Duration) * time.Minute)
 
 	problems, problemIdToIndex, problemIds, err := cc.getProblemsForContest(contestId)
 	if err != nil {
@@ -525,7 +531,7 @@ func (cc *ContestController) getStandings(contestId string) ([]models.UserStandi
 		return nil, err
 	}
 
-	fillStandings(standings, submissions, userIdx, problemIdToIndex, start)
+	fillStandings(standings, submissions, userIdx, problemIdToIndex, start, end)
 
 	sortAndRankStandings(standings)
 

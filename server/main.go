@@ -27,5 +27,5 @@ func main() {
 	r.Static("/store", "./store")
 	r.Static("/static", "../client/build/static")
 
-	r.Run("0.0.0.0:2931")
+	r.Run("0.0.0.0:8080")
 }

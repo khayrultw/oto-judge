@@ -3,6 +3,7 @@ package models
 type ProblemAttempt struct {
 	ProblemNumber uint8  `json:"problem_number"`
 	Status        string `json:"status"`
+	Color         string `json:"color"`
 	Count         int    `json:"count"`
 }
 
