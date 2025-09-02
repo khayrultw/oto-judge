@@ -53,7 +53,7 @@ function ContestSubmissions() {
     <div className="p-4">
       <h1 className="text-2xl mb-4 text-center">Contest Submissions</h1>
 
-      <SubmissionsList submissions={submissions} loading={loading} error={error} onDetails={handleDetails} />;
+      <SubmissionsList submissions={submissions} loading={loading} error={error} onDetails={handleDetails} />
      
       {/* Details Popup  */}
       {selectedSubmission && (

@@ -25,7 +25,15 @@ export default function GuidelinePage() {
       <pre className="bg-gray-900 text-green-300 p-4 rounded-lg overflow-x-auto text-sm mb-6">
 {`var ch = readline();
 var upper = ch.toUpperCase();
-print(upper);`}
+print(upper);
+//Read multiple integers
+var numbers = readline().split(" ").map(function(x) { return parseInt(x); });
+//Read Single integer
+var num = parseInt(readline().trim());
+//Read double number
+var d = parseFloat(readline().trim());
+//Read array of doubles
+var arr = readline().split(" ").map(function(x) { return parseFloat(x); });`}
       </pre>
 
       <h2 className="text-xl font-semibold mb-2 text-gray-800">Python Example:</h2>
