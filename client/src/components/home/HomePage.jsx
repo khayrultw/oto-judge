@@ -12,16 +12,19 @@ function HomePage() {
 
   const fetchContests = async () => {
     try {
-      const [upcomingRes, allRes] = await Promise.all([
-        repo.getUpCommingContest(),
-        repo.getContests()
+      const [upcomingRes, allRes, pastRes] = await Promise.all([
+        repo.getUpcomingContest(),
+        repo.getContests(),
+        repo.getPastContests({ page_size: 10 })
       ]);
       const now = new Date();
-      // Categorize contests
+      // Categorize contests - handle paginated response
+      const allContests = allRes.data?.data || allRes.data || [];
+      const pastContests = pastRes.data?.data || pastRes.data || [];
       let running = null;
       let upcoming = [];
-      let previous = [];
-      allRes.data.forEach(c => {
+      
+      (Array.isArray(allContests) ? allContests : []).forEach(c => {
         const start = new Date(c.start_time || c.startTime);
         const duration = c.duration || c.durations || 0;
         const end = new Date(start.getTime() + duration * 60000);
@@ -29,16 +32,14 @@ function HomePage() {
           running = c;
         } else if (now < start) {
           upcoming.push(c);
-        } else if (now > end) {
-          previous.push(c);
         }
       });
-      // Sort upcoming by soonest start, previous by most recent
+      // Sort upcoming by soonest start
       upcoming = upcoming.sort((a, b) => new Date(a.start_time || a.startTime) - new Date(b.start_time || b.startTime));
-      previous = previous.sort((a, b) => new Date(b.start_time || b.startTime) - new Date(a.start_time || a.startTime));
+      
       setRunningContest(running);
       setUpcomingContests(upcoming);
-      setPreviousContests(previous.slice(0, 10));
+      setPreviousContests(pastContests);
       setError('');
     } catch (err) {
       setError('Failed to load contests.');
@@ -82,58 +83,61 @@ function HomePage() {
   }
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Contests</h1>
+    <div className="p-3 max-w-5xl mx-auto text-sm">
+      <h1 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Contests</h1>
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100">
+        Use of generative AI tools (ChatGPT, Claude, DeepSeek, etc.) is strictly prohibited. You may only browse programming language documentation.
+      </div>
       {error && (
-        <div className="text-red-500 text-center p-4 bg-red-50 rounded-lg">{error}</div>
+        <div className="text-red-500 dark:text-red-400 text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">{error}</div>
       )}
       {/* Running Contest */}
       {runningContest && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-2">Running Contest</h2>
+        <div className="mb-5">
+          <h2 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Running Contest</h2>
           <div
-            className="bg-green-50 rounded-lg shadow-md p-6 mb-2 cursor-pointer hover:bg-green-100"
+            className="bg-green-50 dark:bg-green-900/20 rounded-lg shadow-sm p-3 mb-2 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800"
             onClick={() => navigate(`/viewcontest/${runningContest.id}`)}
           >
-            <div className="text-xl font-bold mb-1">{runningContest.title}</div>
-            <div className="text-gray-600 mb-1">Start: {formatDateTime(runningContest.start_time || runningContest.startTime)}</div>
-            <div className="text-gray-600">Duration: {formatDuration(runningContest.duration || runningContest.durations)}</div>
+            <div className="text-sm font-bold mb-0.5 text-gray-900 dark:text-white">{runningContest.title}</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">Start: {formatDateTime(runningContest.start_time || runningContest.startTime)}</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">Duration: {formatDuration(runningContest.duration || runningContest.durations)}</div>
           </div>
         </div>
       )}
       {/* Upcoming Contests */}
       {upcomingContests.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-2">Upcoming Contest{upcomingContests.length > 1 ? 's' : ''}</h2>
+        <div className="mb-5">
+          <h2 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Upcoming Contest{upcomingContests.length > 1 ? 's' : ''}</h2>
           {upcomingContests.map(contest => (
             <div
               key={contest.id}
-              className="bg-white rounded-lg shadow-md p-6 mb-2 cursor-pointer hover:bg-blue-50"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 mb-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
               onClick={() => navigate(`/viewcontest/${contest.id}`)}
             >
-              <div className="text-xl font-bold mb-1">{contest.title}</div>
-              <div className="text-gray-600 mb-1">Start: {formatDateTime(contest.start_time || contest.startTime)}</div>
-              <div className="text-gray-600">Duration: {formatDuration(contest.duration || contest.durations)}</div>
+              <div className="text-sm font-bold mb-0.5 text-gray-900 dark:text-white">{contest.title}</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">Start: {formatDateTime(contest.start_time || contest.startTime)}</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">Duration: {formatDuration(contest.duration || contest.durations)}</div>
             </div>
           ))}
         </div>
       )}
       {/* Previous Contests */}
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Previous Contests</h2>
+        <h2 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Previous Contests</h2>
         {previousContests.length === 0 ? (
-          <div className="text-gray-500">No previous contests.</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">No previous contests.</div>
         ) : (
-          <ul className="divide-y divide-gray-200 bg-white rounded-lg shadow-md">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             {previousContests.map(contest => (
               <li
                 key={contest.id}
-                className="p-4 hover:bg-blue-50 cursor-pointer"
+                className="p-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer"
                 onClick={() => navigate(`/viewcontest/${contest.id}`)}
               >
-                <div className="font-bold">{contest.title}</div>
-                <div className="text-gray-600 text-sm">Ended</div>
-                <div className="text-gray-600 text-sm">Duration: {formatDuration(contest.duration || contest.durations)}</div>
+                <div className="text-sm font-bold text-gray-900 dark:text-white">{contest.title}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Ended</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Duration: {formatDuration(contest.duration || contest.durations)}</div>
               </li>
             ))}
           </ul>

@@ -32,29 +32,29 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-        <h2 className="text-3xl font-bold mb-6 text-center">My Profile</h2>
-        <div className="mb-4">
-          <div className="text-gray-600 mb-1">User ID:</div>
-          <div className="font-mono text-lg">{user.id}</div>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md max-w-sm w-full">
+        <h2 className="text-lg font-bold mb-4 text-center text-gray-900 dark:text-white">My Profile</h2>
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">User ID:</div>
+          <div className="font-mono text-sm text-gray-900 dark:text-white">{user.id}</div>
+        </div>
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">Name:</div>
+          <div className="font-semibold text-sm text-gray-900 dark:text-white">{user.name}</div>
+        </div>
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">Email:</div>
+          <div className="font-mono text-sm text-gray-900 dark:text-white">{user.email}</div>
         </div>
         <div className="mb-4">
-          <div className="text-gray-600 mb-1">Name:</div>
-          <div className="font-semibold text-lg">{user.name}</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">Role:</div>
+          <div className="inline-block px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold text-xs">{user.role}</div>
         </div>
-        <div className="mb-4">
-          <div className="text-gray-600 mb-1">Email:</div>
-          <div className="font-mono text-lg">{user.email}</div>
-        </div>
-        <div className="mb-6">
-          <div className="text-gray-600 mb-1">Role:</div>
-          <div className="inline-block px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold text-sm">{user.role}</div>
-        </div>
-        {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
+        {error && <div className="mb-3 text-red-500 dark:text-red-400 text-center text-xs">{error}</div>}
         <button
           onClick={handleLogout}
-          className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition"
+          className="w-full bg-red-500 text-white py-1.5 rounded text-sm hover:bg-red-600 transition"
           disabled={loading}
         >
           {loading ? 'Logging out...' : 'Logout'}

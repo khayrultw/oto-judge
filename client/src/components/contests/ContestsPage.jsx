@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import repo from '../../data/Repo';
 import { useUser } from '../../contexts/UserContext';
+import { notify } from '../../utils/feedback';
+import { useConfirmDelete } from '../../components/common/ConfirmDelete';
 
 // Converts 'YYYY-MM-DDTHH:mm' (local) to a UTC ISO string
 const localToUTC = (localDateTime) => {
@@ -53,13 +55,16 @@ const ContestsPage = () => {
   const [updateError, setUpdateError] = useState("");
   const navigate = useNavigate(); // Hook for navigation
   const { user } = useUser();
+  const { confirmDelete, ConfirmDeleteDialog } = useConfirmDelete();
 
   useEffect(() => {
     // Fetch contests from API
     const fetchContests = async () => {
       try {
         const res = await repo.getContests();
-        setContestList(res.data);
+        // Handle paginated response - extract data array
+        const contests = res.data?.data || res.data || [];
+        setContestList(Array.isArray(contests) ? contests : []);
       } catch (err) {
         setContestList([]);
       }
@@ -91,10 +96,18 @@ const ContestsPage = () => {
         duration: parseInt(newContest.duration, 10),
       };
 
-      await repo.createContest(payload);
+      await notify.promise(
+        repo.createContest(payload),
+        {
+          loading: 'Creating contest...',
+          success: 'Contest created.',
+          error: 'Failed to create contest.',
+        }
+      );
       // Refresh contest list
       const res = await repo.getContests();
-      setContestList(res.data);
+      const contests = res.data?.data || res.data || [];
+      setContestList(Array.isArray(contests) ? contests : []);
       setShowPopup(false); // Close the popup after submission
       setNewContest({ title: "", start_time: "", duration: 0 }); // Reset the form
     } catch (err) {
@@ -113,10 +126,18 @@ const ContestsPage = () => {
         start_time: localToUTC(editFormData.start_time),
         duration: parseInt(editFormData.duration, 10),
       };
-      await repo.updateContest(editingContest.id, payload);
+      await notify.promise(
+        repo.updateContest(editingContest.id, payload),
+        {
+          loading: 'Updating contest...',
+          success: 'Contest updated.',
+          error: 'Failed to update contest.',
+        }
+      );
       // Refresh contest list
       const res = await repo.getContests();
-      setContestList(res.data);
+      const contests = res.data?.data || res.data || [];
+      setContestList(Array.isArray(contests) ? contests : []);
       setEditingContest(null); // Close popup
     } catch (err) {
       setUpdateError("Failed to update contest. Please try again.");
@@ -146,52 +167,67 @@ const ContestsPage = () => {
 
   // Navigate to contest details page
   const handleContestClick = (id) => {
-    navigate(`/contests/${id}`);
+    // Admin goes to contest details (problem management), user goes to view contest
+    if (user.role === 'admin') {
+      navigate(`/contests/${id}`);
+    } else {
+      navigate(`/viewcontest/${id}`);
+    }
   };
 
   // Delete contest
   const handleDeleteContest = async (e, contestId) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this contest?')) return;
-    try {
-      await repo.deleteContest(contestId);
-      // Refresh contest list
-      const res = await repo.getContests();
-      setContestList(res.data);
-    } catch (err) {
-      alert('Failed to delete contest.');
-    }
+    
+    await confirmDelete({
+      entity: 'contest',
+      onConfirm: async () => {
+        await notify.promise(
+          repo.deleteContest(contestId),
+          {
+            loading: 'Deleting...',
+            success: 'Deleted.',
+            error: 'Delete failed.',
+          }
+        );
+        // Refresh contest list
+        const res = await repo.getContests();
+        const contests = res.data?.data || res.data || [];
+        setContestList(Array.isArray(contests) ? contests : []);
+      }
+    });
   };
 
   return (
     <div className="p-4 md:px-24 lg:px-48 xl:px-64 text-xs md:text-base">
-      <h1 className="text-2xl font-bold mb-4">Contests</h1>
+      <ConfirmDeleteDialog />
+      <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Contests</h1>
       
       {/* Display List of Contests */}
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border">
+        <table className="min-w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
           <thead>
-            <tr className="bg-gray-200 text-left">
-              <th className="py-2 px-4 border">ID</th>
-              <th className="py-2 px-4 border">Title</th>
-              <th className="py-2 px-4 border">Start Time</th>
-              <th className="py-2 px-4 border">Duration</th>
-              {user.role === 'admin' && <th className="py-2 px-4 border">Actions</th>}
+            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
+              <th className="py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">ID</th>
+              <th className="py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">Title</th>
+              <th className="py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">Start Time</th>
+              <th className="py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">Duration</th>
+              {user.role === 'admin' && <th className="py-2 px-4 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {contestList.map((contest) => (
               <tr
                 key={contest.id}
-                className="cursor-pointer hover:bg-gray-100"
+                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
                 onClick={() => handleContestClick(contest.id)}
               >
-                <td className="py-2 px-4 border-b">{contest.id}</td>
-                <td className="py-2 px-4 border-b">{contest.title}</td>
-                <td className="py-2 px-4 border-b">{formatUTC(contest.start_time)}</td>
-                <td className="py-2 px-4 border-b">{contest.duration}</td>
+                <td className="py-2 px-4 border-b border-gray-300 dark:border-gray-600">{contest.id}</td>
+                <td className="py-2 px-4 border-b border-gray-300 dark:border-gray-600">{contest.title}</td>
+                <td className="py-2 px-4 border-b border-gray-300 dark:border-gray-600">{formatUTC(contest.start_time)}</td>
+                <td className="py-2 px-4 border-b border-gray-300 dark:border-gray-600">{contest.duration}</td>
                 {user.role === 'admin' && (
-                  <td className="py-2 px-4 border-b">
+                  <td className="py-2 px-4 border-b border-gray-300 dark:border-gray-600">
                     <div className="flex flex-wrap gap-2">
                       <button
                         className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
@@ -214,63 +250,65 @@ const ContestsPage = () => {
         </table>
       </div>
 
-      {/* Button to trigger popup for creating a new contest */}
-      <button
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-        onClick={togglePopup}
-      >
-        Create New Contest
-      </button>
+      {/* Button to trigger popup for creating a new contest - Admin only */}
+      {user.role === 'admin' && (
+        <button
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+          onClick={togglePopup}
+        >
+          Create New Contest
+        </button>
+      )}
 
       {/* Popup for contest creation */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-8 rounded-md w-full max-w-2xl">
-            <h2 className="text-2xl font-bold mb-4">Create New Contest</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-md w-full max-w-2xl">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Create New Contest</h2>
 
             <form onSubmit={handleCreateContest}>
               <div className="mb-4">
-                <label className="block text-sm font-bold mb-2">Title</label>
+                <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Title</label>
                 <input
                   type="text"
                   name="title"
                   value={newContest.title}
                   onChange={handleInputChange}
-                  className="border p-2 w-full"
+                  className="border border-gray-300 dark:border-gray-600 p-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-bold mb-2">Start Time</label>
+                <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Start Time</label>
                 <input
                   type="datetime-local"
                   name="start_time"
                   value={newContest.start_time}
                   onChange={handleInputChange}
-                  className="border p-2 w-full"
+                  className="border border-gray-300 dark:border-gray-600 p-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-bold mb-2">Duration(in minutes)</label>
+                <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Duration(in minutes)</label>
                 <input
                   type="text"
                   name="duration"
                   value={newContest.duration}
                   onChange={handleInputChange}
-                  className="border p-2 w-full"
+                  className="border border-gray-300 dark:border-gray-600 p-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                   placeholder="e.g., 120"
                   required
                 />
               </div>
 
-              {createError && <div className="mb-2 text-red-500">{createError}</div>}
+              {createError && <div className="mb-2 text-red-500 dark:text-red-400">{createError}</div>}
               <div className="flex justify-end">
                 <button
                   type="button"
-                  className="mr-4 bg-gray-300 px-4 py-2 rounded"
+                  className="mr-4 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
                   onClick={togglePopup}
                   disabled={createLoading}
                 >
@@ -278,7 +316,7 @@ const ContestsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
                   disabled={createLoading}
                 >
                   {createLoading ? "Creating..." : "Create"}
@@ -291,49 +329,49 @@ const ContestsPage = () => {
 
       {/* Popup for contest editing */}
       {editingContest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-8 rounded-md w-full max-w-2xl">
-            <h2 className="text-2xl font-bold mb-4">Edit Contest</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-md w-full max-w-2xl">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Contest</h2>
             <form onSubmit={handleUpdateContest}>
               <div className="mb-4">
-                <label className="block text-sm font-bold mb-2">Title</label>
+                <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Title</label>
                 <input
                   type="text"
                   name="title"
                   value={editFormData.title}
                   onChange={handleEditInputChange}
-                  className="border p-2 w-full"
+                  className="border border-gray-300 dark:border-gray-600 p-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                   required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-bold mb-2">Start Time</label>
+                <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Start Time</label>
                 <input
                   type="datetime-local"
                   name="start_time"
                   value={editFormData.start_time}
                   onChange={handleEditInputChange}
-                  className="border p-2 w-full"
+                  className="border border-gray-300 dark:border-gray-600 p-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                   required
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-bold mb-2">Duration (in minutes)</label>
+                <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Duration (in minutes)</label>
                 <input
                   type="number"
                   name="duration"
                   value={editFormData.duration}
                   onChange={handleEditInputChange}
-                  className="border p-2 w-full"
+                  className="border border-gray-300 dark:border-gray-600 p-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                   placeholder="e.g., 120"
                   required
                 />
               </div>
-              {updateError && <div className="mb-2 text-red-500">{updateError}</div>}
+              {updateError && <div className="mb-2 text-red-500 dark:text-red-400">{updateError}</div>}
               <div className="flex justify-end">
                 <button
                   type="button"
-                  className="mr-4 bg-gray-300 px-4 py-2 rounded"
+                  className="mr-4 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
                   onClick={closeEditPopup}
                   disabled={updateLoading}
                 >
@@ -341,7 +379,7 @@ const ContestsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
                   disabled={updateLoading}
                 >
                   {updateLoading ? "Updating..." : "Update"}

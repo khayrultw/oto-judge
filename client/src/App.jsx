@@ -1,11 +1,11 @@
-import { BrowserRouter as Router, Route, Routes, Outlet, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/Sidebar';
 import HomePage from './components/home/HomePage';
 import ProblemDetailsPage from './components/contests/ProblemDetailsPage';
 import SubmissionsPage from './components/submissions/SubmissionsPage';
 import StandingsPage from './components/standings/StandingsPage';
-import SubmitCodePage from './components/submissions/SubmitCodePage';
 import ContestsPage from './components/contests/ContestsPage';
 import ContestDetailsPage from './components/contests/ContestDetailsPage';
 import ViewContest from './components/contests/ViewContest';
@@ -17,6 +17,9 @@ import repo from './data/Repo';
 import ContestSubmissions from './components/contests/ContestSubmissions';
 import MyContestSubmissions from './components/contests/MyContestSubmissions';
 import GuidelinePage from './components/Guideline';
+import AdminDashboard from './components/admin/AdminDashboard';
+import AdminUsersPage from './components/admin/AdminUsersPage';
+import AdminSubmissionsPage from './components/admin/AdminSubmissionsPage';
 
 // Loading component
 const LoadingSpinner = () => (
@@ -86,12 +89,12 @@ function AppContent() {
 
   return (
     <Router>
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
           {isLoggedIn && <Sidebar />}
 
           <div
-            className={`flex-grow p-2 md:p-4 bg-gray-100 transition-all duration-200 ${
-              isLoggedIn ? "ml-12 md:ml-64" : ""
+            className={`flex-grow p-2 md:p-4 transition-all duration-200 ${
+              isLoggedIn ? "ml-14" : ""
             }`}
           >
           <Routes>
@@ -104,15 +107,22 @@ function AppContent() {
               <Route path="/" element={<HomePage />} />
               <Route path="/problem/:id" element={<ProblemDetailsPage />} />
               <Route path="/submissions" element={<SubmissionsPage />} />
-              <Route path="/submit-code" element={<SubmitCodePage />} />
-              <Route path="/contests" element={<ContestsPage />} />
-              <Route path="/contests/:id" element={<ContestDetailsPage />} />
               <Route path="/standings/:contestId" element={<StandingsPage />} />
               <Route path="/viewcontest/:id" element={<ViewContest />} />
               <Route path="/contest/:contestId/submissions" element={<ContestSubmissions />} />
               <Route path="/contest/:contestId/submissions/my" element={<MyContestSubmissions />} />
+              <Route path="/contest/:contestId/problem/:problemId" element={<ProblemDetailsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/guidelines" element={<GuidelinePage />} />
+            </Route>
+
+            {/* Admin-only routes */}
+            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/contests" element={<ContestsPage />} />
+              <Route path="/contests/:id" element={<ContestDetailsPage />} />
+              <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
             </Route>
 
             {/* Catch all route - redirect to home or login */}
@@ -127,6 +137,7 @@ function AppContent() {
 function App() {
   return (
     <UserProvider>
+      <Toaster position="top-right" />
       <AppContent />
     </UserProvider>
   );

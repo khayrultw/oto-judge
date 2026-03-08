@@ -3,21 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@codemirror/lang-cpp": "^6.0.3",
+    "@codemirror/lang-java": "^6.0.2",
+    "@codemirror/lang-javascript": "^6.2.4",
+    "@codemirror/lang-python": "^6.2.1",
     "@heroicons/react": "^2.1.5",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@uiw/react-codemirror": "^4.25.2",
+    "@uiw/react-md-editor": "^4.0.8",
     "axios": "^1.10.0",
+    "classnames": "^2.5.1",
+    "prism-react-renderer": "^2.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
     "react-pdf": "^9.2.1",
     "react-router-dom": "^6.26.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "dev": "vite",         
-    "build": "vite build",  
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "eslintConfig": {
@@ -40,9 +50,9 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.2",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.42",
-    "tailwindcss": "^3.4.10",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
     "vite": "^7.1.4"
   }
 }
