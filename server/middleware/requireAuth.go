@@ -35,6 +35,12 @@ func RequireAuth(c *gin.Context) {
 
 	c.Set("userId", uint(claims["user_id"].(float64)))
 	c.Set("role", claims["role"].(string))
+
+	// Extract isAdmin from JWT claims (graceful fallback for old tokens without this claim)
+	if isAdmin, ok := claims["is_admin"].(bool); ok {
+		c.Set("isAdmin", isAdmin)
+	}
+
 	c.Next()
 }
 
@@ -62,5 +68,10 @@ func RequireTokenInQuery(c *gin.Context) {
 	}
 	c.Set("userId", uint(claims["user_id"].(float64)))
 	c.Set("role", claims["role"].(string))
+
+	if isAdmin, ok := claims["is_admin"].(bool); ok {
+		c.Set("isAdmin", isAdmin)
+	}
+
 	c.Next()
 }

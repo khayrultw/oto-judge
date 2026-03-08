@@ -19,93 +19,128 @@ type AuthController struct {
 }
 
 func (authController *AuthController) Update(c *gin.Context) {
-	var data map[string]string
+	var req models.UpdateUserRequest
 
-	if err := c.BindJSON(&data); err != nil {
-		c.Copy().AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "validation_failed",
+			Fields: map[string]string{
+				"details": err.Error(),
+			},
+		})
 		return
 	}
 
-	password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), 14)
-	user := models.User{
-		Name:     data["name"],
-		Email:    data["email"],
-		Password: password,
-	}
-
-	var dbuser models.User
-
-	authController.Db.Where("email = ?", user.Email).First(&dbuser)
-
-	// update user if exists
-	if dbuser.Email != "" {
-		dbuser.Name = user.Name
-		dbuser.Password = user.Password
-		if err := authController.Db.Save(&dbuser).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
-			return
-		}
-		c.JSON(http.StatusOK, "User Updated Successfully")
+	// This endpoint needs userId from context or email in request
+	// For simplicity, assuming email is required in the request
+	if req.Email == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "email_required",
+		})
 		return
 	}
+
+	var user models.User
+	if err := authController.Db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "user_not_found",
+		})
+		return
+	}
+
+	// Update fields if provided
+	if req.Name != "" {
+		user.Name = req.Name
+	}
+	if req.Password != "" {
+		password, _ := bcrypt.GenerateFromPassword([]byte(req.Password), 14)
+		user.Password = password
+	}
+
+	if err := authController.Db.Save(&user).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_update_user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User updated successfully",
+	})
 }
 
 func (authController *AuthController) Register(c *gin.Context) {
-	var data map[string]string
+	var req models.RegisterRequest
 
-	if err := c.BindJSON(&data); err != nil {
-		c.Copy().AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "validation_failed",
+			Fields: map[string]string{
+				"details": err.Error(),
+			},
+		})
 		return
 	}
 
-	password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), 14)
+	// Check if email already exists
+	var existingUser models.User
+	if err := authController.Db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		c.AbortWithStatusJSON(http.StatusConflict, models.ErrorResponse{
+			Error: "email_already_exists",
+		})
+		return
+	}
+
+	password, _ := bcrypt.GenerateFromPassword([]byte(req.Password), 14)
 	user := models.User{
-		Name:     data["name"],
-		Email:    data["email"],
+		Name:     req.Name,
+		Email:    req.Email,
 		Password: password,
-	}
-
-	var dbuser models.User
-
-	authController.Db.Where("email = ?", user.Email).First(&dbuser)
-
-	if dbuser.Email != "" {
-		c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "User Already Exist"})
-		return
+		IsAdmin:  false, // Regular registration always creates non-admin users
 	}
 
 	if err := authController.Db.Create(&user).Error; err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_create_user",
+		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, "User Created Successfully")
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User created successfully",
+		"user_id": user.Id,
+	})
 }
 
 // --- Replace Login to return token in JSON, not set cookie ---
 func (authController *AuthController) Login(c *gin.Context) {
-	var data map[string]string
+	var req models.LoginRequest
 
-	if err := c.BindJSON(&data); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "validation_failed",
+			Fields: map[string]string{
+				"details": err.Error(),
+			},
+		})
 		return
 	}
-
-	fmt.Printf(data["email"])
 
 	var user models.User
 
-	authController.Db.Where("email = ?", data["email"]).First(&user)
-
-	if user.Id == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+	if err := authController.Db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "user_not_found",
+		})
 		return
 	}
 
-	err := bcrypt.CompareHashAndPassword(user.Password, []byte(data["password"]))
+	err := bcrypt.CompareHashAndPassword(user.Password, []byte(req.Password))
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Incorrect password"})
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "incorrect_password",
+		})
 		return
 	}
 
@@ -117,16 +152,18 @@ func (authController *AuthController) Login(c *gin.Context) {
 	token, jwtCreationError := createJWT(user.Id, role)
 
 	if jwtCreationError != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_create_token",
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"id":    user.Id,
-		"name":  user.Name,
-		"email": user.Email,
-		"role":  role,
-		"token": token,
+	c.JSON(http.StatusOK, models.LoginResponse{
+		ID:    user.Id,
+		Name:  user.Name,
+		Email: user.Email,
+		Role:  role,
+		Token: token,
 	})
 }
 
@@ -141,6 +178,7 @@ func createJWT(userId uint, role string) (string, error) {
 	claims["exp"] = time.Now().UTC().Add(24 * time.Hour).Unix()
 	claims["user_id"] = userId
 	claims["role"] = role
+	claims["is_admin"] = role == "admin"
 	tokenStr, err := token.SignedString([]byte(config.GetConfig().JWTSecret))
 
 	if err != nil {
@@ -158,13 +196,17 @@ func (authController *AuthController) Logout(c *gin.Context) {
 func (authController *AuthController) GetUser(c *gin.Context) {
 	userId, exists := c.Get("userId")
 	if !exists {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error: "unauthorized",
+		})
 		return
 	}
 
 	var user models.User
 	if err := authController.Db.First(&user, userId).Error; err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_retrieve_user",
+		})
 		return
 	}
 
@@ -173,10 +215,10 @@ func (authController *AuthController) GetUser(c *gin.Context) {
 		role = "admin"
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"id":    user.Id,
-		"name":  user.Name,
-		"email": user.Email,
-		"role":  role,
+	c.JSON(http.StatusOK, models.UserResponse{
+		ID:    user.Id,
+		Name:  user.Name,
+		Email: user.Email,
+		Role:  role,
 	})
 }

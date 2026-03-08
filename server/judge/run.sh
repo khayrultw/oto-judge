@@ -3,16 +3,25 @@
 COMPILED_CODE="$1"
 INPUT_STRING="$2"  
 LANG="$3"
-MEM_LIMIT=512M          # Memory limit
-TIME_LIMIT=2.5            # Time limit in seconds
+TIME_LIMIT="${4:-2.0}"       # Time limit in seconds (default 2.0)
+MEM_LIMIT="${5:-512}M"       # Memory limit in MB (default 512)
+
+# If $5 was provided, append M; otherwise MEM_LIMIT is already "512M"
+if [[ -n "$5" ]]; then
+    MEM_LIMIT="${5}M"
+fi
+
 ERROR_OUTPUT=$(mktemp /tmp/error_output-XXXXXX)
 
 case "$LANG" in
     cpp) RUN_CMD="$COMPILED_CODE" ;;
     py) RUN_CMD="python3 $COMPILED_CODE" ;;
-    kt) RUN_CMD="$COMPILED_CODE" ;;
+    kt) RUN_CMD="java -jar $COMPILED_CODE" ;;
     js) RUN_CMD="v8 $COMPILED_CODE" ;;
-    *) RUN_CMD="$COMPILED_CODE" ;;
+    java) RUN_CMD="java -jar $COMPILED_CODE" ;;
+    go) RUN_CMD="$COMPILED_CODE" ;;
+    dart) RUN_CMD="$COMPILED_CODE" ;;
+    *) echo "Unsupported language: $LANG" >&2; exit 1 ;;
 esac
 
 cleanup() {

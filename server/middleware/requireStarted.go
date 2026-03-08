@@ -3,14 +3,20 @@ package middleware
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/khayrultw/go-judge/database"
 	"github.com/khayrultw/go-judge/models"
+	"github.com/khayrultw/go-judge/utils"
 )
 
 func RequireStarted(c *gin.Context) {
+	// Check if user is admin - admins can bypass time restrictions
+	if utils.IsAdmin(c) {
+		c.Next()
+		return
+	}
+
 	problemIdStr := c.Param("problemId")
 	problemId, err := strconv.ParseUint(problemIdStr, 10, 64)
 	if err != nil || problemId == 0 {
@@ -30,7 +36,7 @@ func RequireStarted(c *gin.Context) {
 		return
 	}
 
-	if contest.StartTime.Time.After(time.Now()) {
+	if !utils.IsContestStarted(&contest) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Contest has not started yet"})
 		return
 	}

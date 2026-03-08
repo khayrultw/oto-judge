@@ -8,16 +8,18 @@ import (
 
 func RegisterContestRoutes(rg *gin.RouterGroup) {
 	contestController := controllers.NewContestController()
-	rg.POST("", middleware.RequireAuth, middleware.RequireAdmin, contestController.CreateContest)
+
+	// SSE endpoints (require token in query)
 	rg.GET("/standings/sse/:contestId", middleware.RequireTokenInQuery, contestController.SSEStandings)
 	rg.GET("/:contestId/sse", middleware.RequireTokenInQuery, contestController.GetAllMySubmissionSSE)
 	rg.GET("/:contestId/sse/my", middleware.RequireTokenInQuery, contestController.GetMySubmissionsSSE)
+
+	// Regular endpoints (require auth header)
+	rg.GET("/upcoming", middleware.RequireAuth, contestController.GetUpcomingContests)
+	rg.GET("/past", middleware.RequireAuth, contestController.GetPastContests)
 	rg.GET("/:contestId/submissions", middleware.RequireAuth, contestController.GetAllSubmissions)
 	rg.GET("/:contestId/submissions/my", middleware.RequireAuth, contestController.GetMySubmissions)
-	rg.GET("/:contestId", middleware.RequireAuth, contestController.GetContest)
-	rg.PUT("/:contestId", middleware.RequireAuth, middleware.RequireAdmin, contestController.UpdateContest)
-	rg.GET("", middleware.RequireAuth, contestController.GetContests)
-	rg.GET("/upcomming", middleware.RequireAuth, contestController.GetUpcomingContests)
-	rg.DELETE("/:contestId", middleware.RequireAuth, middleware.RequireAdmin, contestController.DeleteContest)
 	rg.GET("/:contestId/standings", middleware.RequireAuth, contestController.GetStandings)
+	rg.GET("/:contestId", middleware.RequireAuth, contestController.GetContest)
+	rg.GET("", middleware.RequireAuth, contestController.GetContests)
 }

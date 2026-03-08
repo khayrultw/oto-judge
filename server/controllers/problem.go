@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/khayrultw/go-judge/database"
 	"github.com/khayrultw/go-judge/models"
+	"github.com/khayrultw/go-judge/utils"
 	"gorm.io/gorm"
 )
 
@@ -50,12 +51,11 @@ func (pc *ProblemController) CreateProblem(c *gin.Context) {
 		return
 	}
 
-	testcasePath := filepath.Join(uploadDir, fmt.Sprintf("c_%d_p_%d_testcase.txt", contestId, problemNumber))
+	testcasePath := filepath.Join(uploadDir, fmt.Sprintf("c_%d_p_%d_testcase.json", contestId, problemNumber))
 	if err := os.WriteFile(testcasePath, []byte(testcaseText), 0644); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write testcase file"})
 		return
 	}
-
 
 	problem := models.Problem{
 		ContestId:     uint(contestId),
@@ -63,6 +63,7 @@ func (pc *ProblemController) CreateProblem(c *gin.Context) {
 		Statement:     c.PostForm("statement"),
 		TestCasePath:  testcasePath,
 		ProblemNumber: uint8(problemNumber),
+		IsSpecial:     c.PostForm("is_special") == "true",
 	}
 
 	if err := pc.Db.Create(&problem).Error; err != nil {
@@ -80,7 +81,31 @@ func (pc *ProblemController) GetProblem(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Problem not found"})
 		return
 	}
-	c.JSON(http.StatusOK, problem)
+
+	isAdmin := utils.IsAdmin(c)
+
+	if isAdmin {
+		c.JSON(http.StatusOK, models.ProblemAdminResponse{
+			ID:            problem.Id,
+			Title:         problem.Title,
+			ContestID:     problem.ContestId,
+			Statement:     problem.Statement,
+			TestCasePath:  problem.TestCasePath,
+			ProblemNumber: problem.ProblemNumber,
+			IsSpecial:     problem.IsSpecial,
+			CreatedAt:     problem.CreatedAt,
+		})
+	} else {
+		c.JSON(http.StatusOK, models.ProblemResponse{
+			ID:            problem.Id,
+			Title:         problem.Title,
+			ContestID:     problem.ContestId,
+			Statement:     problem.Statement,
+			ProblemNumber: problem.ProblemNumber,
+			IsSpecial:     problem.IsSpecial,
+			CreatedAt:     problem.CreatedAt,
+		})
+	}
 }
 
 func (pc *ProblemController) UpdateProblem(c *gin.Context) {
@@ -91,20 +116,66 @@ func (pc *ProblemController) UpdateProblem(c *gin.Context) {
 		return
 	}
 
-	title := c.PostForm("title")
-	statement := c.PostForm("statement")
-	if title != "" {
-		problem.Title = title
-	}
-	if statement != "" {
-		problem.Statement = statement
+	// Check if using JSON body (with testcase_text) or form data
+	contentType := c.GetHeader("Content-Type")
+	if contentType == "application/json" || contentType == "application/json; charset=utf-8" {
+		var req models.UpdateProblemRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Error: "validation_failed",
+				Fields: map[string]string{
+					"details": err.Error(),
+				},
+			})
+			return
+		}
+
+		if req.Title != "" {
+			problem.Title = req.Title
+		}
+		if req.Statement != "" {
+			problem.Statement = req.Statement
+		}
+		if req.TestcaseText != "" {
+			// Replace testcase file content
+			if err := os.WriteFile(problem.TestCasePath, []byte(req.TestcaseText), 0644); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update testcase file"})
+				return
+			}
+		}
+		if req.IsSpecial != nil {
+			problem.IsSpecial = *req.IsSpecial
+		}
+	} else {
+		// Form data (backward compatibility)
+		title := c.PostForm("title")
+		statement := c.PostForm("statement")
+		if title != "" {
+			problem.Title = title
+		}
+		if statement != "" {
+			problem.Statement = statement
+		}
+		if c.PostForm("is_special") != "" {
+			problem.IsSpecial = c.PostForm("is_special") == "true"
+		}
 	}
 
 	if err := pc.Db.Save(&problem).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update problem"})
 		return
 	}
-	c.JSON(http.StatusOK, problem)
+
+	c.JSON(http.StatusOK, models.ProblemAdminResponse{
+		ID:            problem.Id,
+		Title:         problem.Title,
+		ContestID:     problem.ContestId,
+		Statement:     problem.Statement,
+		TestCasePath:  problem.TestCasePath,
+		ProblemNumber: problem.ProblemNumber,
+		IsSpecial:     problem.IsSpecial,
+		CreatedAt:     problem.CreatedAt,
+	})
 }
 
 func (pc *ProblemController) DeleteProblem(c *gin.Context) {

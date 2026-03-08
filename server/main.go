@@ -5,6 +5,7 @@ import (
 
 	"github.com/khayrultw/go-judge/config"
 	"github.com/khayrultw/go-judge/database"
+	"github.com/khayrultw/go-judge/middleware"
 	"github.com/khayrultw/go-judge/routes"
 )
 
@@ -18,6 +19,8 @@ func main() {
 		return
 	}
 
+	r.Use(middleware.RateLimiter(20, 10))
+
 	api := r.Group("/api")
 	{
 		routes.RegisterAllRoutes(api)
@@ -25,7 +28,7 @@ func main() {
 	routes.RegisterClientRoutes(r)
 
 	r.Static("/store", "./store")
-	r.Static("/static", "../client/build/static")
+	r.Static("/assets", "../client/dist/assets")
 
 	r.Run("0.0.0.0:8080")
 }

@@ -19,4 +19,7 @@ func RegisterAllRoutes(r *gin.RouterGroup) {
 
 	submissionGroup := r.Group("/submissions")
 	RegisterSubmissionRoutes(submissionGroup)
+
+	// Admin routes under /api/admin
+	RegisterAdminRoutes(r)
 }

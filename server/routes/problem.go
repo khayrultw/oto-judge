@@ -8,8 +8,7 @@ import (
 
 func RegisterProblemRoutes(rg *gin.RouterGroup) {
 	problemController := controllers.NewProblemController()
-	rg.POST("", middleware.RequireAdmin, problemController.CreateProblem)
+
+	// User-facing problem routes (with time guards)
 	rg.GET("/:problemId", middleware.RequireStarted, problemController.GetProblem)
-	rg.PUT("/:problemId", middleware.RequireAdmin, problemController.UpdateProblem)
-	rg.DELETE("/:problemId", middleware.RequireAdmin, problemController.DeleteProblem)
 }

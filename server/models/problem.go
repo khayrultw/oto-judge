@@ -7,6 +7,7 @@ type Problem struct {
 	Statement     string       `json:"statement" validate:"required" binding:"required"`
 	TestCasePath  string       `json:"test_case_path" validate:"required" binding:"required"`
 	ProblemNumber uint8        `json:"problem_number" validate:"required" binding:"required"`
+	IsSpecial     bool         `json:"is_special" gorm:"default:false"`
 	Submissions   []Submission `gorm:"foreignKey:ProblemId;references:Id" json:"-"`
 	CreatedAt     CustomTime   `json:"created_at" gorm:"autoCreateTime"`
 }

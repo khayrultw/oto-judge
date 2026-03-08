@@ -12,7 +12,7 @@ func TestPython(c *gin.Context) {
 value = int(input()) 
 print(value*2)
 	`,
-		"store/test_cases/test0.txt",
+		"store/test_cases/contest_4/test0.json",
 		"py")
 	c.JSON(http.StatusOK, gin.H{
 		"message": status,
@@ -25,7 +25,7 @@ func TestKotlin(c *gin.Context) {
 fun main(args: Array<String>) {
     var inp = readln().trim().toInt()
     println(inp*2)
-}`, "store/test_cases/test0.txt", "kt")
+}`, "store/test_cases/contest_4/test0.json", "kt")
 	c.JSON(http.StatusOK, gin.H{
 		"message": status,
 	})

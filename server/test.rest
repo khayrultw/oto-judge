@@ -1,69 +1,550 @@
-POST http://localhost:8080/register HTTP/1.1
-content-type: application/json
+@baseUrl = http://localhost:8080
+@adminToken = {{login_admin.response.body.token}}
+@userToken = {{login_user.response.body.token}}
+@contestId = 1
+@problemId = 1
+@submissionId = 1
+@userId = 2
+
+### ========================================
+### AUTHENTICATION TESTS
+### ========================================
+
+### Register a regular user
+# @name register_user
+POST {{baseUrl}}/api/register
+Content-Type: application/json
 
 {
-    "name": "",
-    "email": "",
-    "password": ""
+    "name": "Test User",
+    "email": "user@test.com",
+    "password": "password123"
 }
 
-############
-POST http://localhost:2931/update-user HTTP/1.1
-content-type: application/json
+###
+
+### Register an admin (should fail - use admin endpoint)
+POST {{baseUrl}}/api/register
+Content-Type: application/json
 
 {
-    "name": "Dominic",
-    "email": "weizhedominic24f@forward.edu.my",
-    "password": "qwertyqwerty"
+    "name": "Should Fail Admin",
+    "email": "admin2@test.com",
+    "password": "password123"
 }
 
-########
+###
 
-POST http://localhost:8080/login HTTP/1.1
-content-type: application/json
+### Login as admin
+# @name login_admin
+POST {{baseUrl}}/api/login
+Content-Type: application/json
 
 {
-    "email": "test@em.com",
+    "email": "khayrul@forward.edu.my",
     "password": "qazwsx"
 }
 
-############
+###
 
-POST http://localhost:8080/test/python HTTP/1.1
-content-type: application/json
+### Login as regular user
+# @name login_user
+POST {{baseUrl}}/api/login
+Content-Type: application/json
 
 {
-    "user_id": 1,
-    "contest_id": 1,
-    "source_code": "value = int(input())\nprint(value*2)\rvalue = int(input())\nprint(value*3)",
-    "language": "py",
-    "problem_number": 0
+    "email": "user@test.com",
+    "password": "password123"
 }
 
-######### create contest type Contest struct {
-POST http://localhost:8080/contest HTTP/1.1
-content-type: application/json
+###
+
+### Get current user (admin)
+GET {{baseUrl}}/api/me
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get current user (regular user)
+GET {{baseUrl}}/api/me
+Authorization: Bearer {{userToken}}
+
+###
+
+### ========================================
+### ADMIN USER MANAGEMENT
+### ========================================
+
+### Create user (admin only)
+# @name create_user
+POST {{baseUrl}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "New User",
+    "email": "newuser@test.com",
+    "password": "password123",
+    "is_admin": false
+}
+
+###
+
+### Create admin user
+POST {{baseUrl}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "New Admin",
+    "email": "newadmin@test.com",
+    "password": "admin123",
+    "is_admin": true
+}
+
+###
+
+### List all users (admin only)
+GET {{baseUrl}}/api/admin/users?page=1&page_size=20
+Authorization: Bearer {{adminToken}}
+
+###
+
+### List all users including deleted (admin only)
+GET {{baseUrl}}/api/admin/users?include_deleted=true
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get specific user (admin only)
+GET {{baseUrl}}/api/admin/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Update user (admin only)
+PUT {{baseUrl}}/api/admin/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "Updated Name",
+    "is_admin": false
+}
+
+###
+
+### Try to create user without admin token (should fail)
+POST {{baseUrl}}/api/admin/users
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+    "name": "Should Fail",
+    "email": "fail@test.com",
+    "password": "password123"
+}
+
+###
+
+### Delete user (soft delete - admin only)
+DELETE {{baseUrl}}/api/admin/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Update user password (admin only)
+PUT {{baseUrl}}/api/admin/users/16/password
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "password": "qwerqwer"
+}
+
+###
+
+### ========================================
+### CONTEST MANAGEMENT
+### ========================================
+
+### Create contest (admin only)
+# @name create_contest
+POST {{baseUrl}}/api/admin/contests
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
 
 {
     "title": "Test Contest",
-    "desc": "This is a test contest",
-    "start_time": "2025-10-01T00:00:00Z"
+    "start_time": "2025-12-01T10:00:00Z",
+    "duration": 180
 }
 
-#####
+###
 
-GET http://localhost:8080/api/test/python
+### Create past contest (for testing)
+POST {{baseUrl}}/api/admin/contests
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
 
+{
+    "title": "Past Contest",
+    "start_time": "2024-01-01T10:00:00Z",
+    "duration": 180
+}
 
-######
-GET http://localhost:8080/test/kotlin
+###
 
-#######
+### Create future contest
+POST {{baseUrl}}/api/admin/contests
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
 
-GET http://localhost:8080/submission/11
+{
+    "title": "Future Contest",
+    "start_time": "2026-12-01T10:00:00Z",
+    "duration": 120
+}
 
-#########
-GET  http://localhost:8080/logout
+###
 
-######
-GET http://localhost:8080/store/u5_1fevdr2houkjb.py
+### List all contests (authenticated)
+GET {{baseUrl}}/api/contests
+Authorization: Bearer {{userToken}}
+
+###
+
+### Get specific contest as admin (should show problems)
+GET {{baseUrl}}/api/contests/{{contestId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get specific contest as user before start (should hide problems)
+GET {{baseUrl}}/api/contests/3
+Authorization: Bearer {{userToken}}
+
+###
+
+### Get specific contest as user after start (should show problems, hide testcase paths)
+GET {{baseUrl}}/api/contests/2
+Authorization: Bearer {{userToken}}
+
+###
+
+### Update contest (admin only)
+PUT {{baseUrl}}/api/admin/contests/{{contestId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "title": "Updated Contest Title",
+    "duration": 240
+}
+
+###
+
+### Delete contest (admin only)
+DELETE {{baseUrl}}/api/admin/contests/{{contestId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get upcoming contests
+GET {{baseUrl}}/api/contests/upcomming
+Authorization: Bearer {{userToken}}
+
+###
+
+### Get contest standings
+GET {{baseUrl}}/api/contests/{{contestId}}/standings
+Authorization: Bearer {{userToken}}
+
+###
+
+### ========================================
+### PROBLEM MANAGEMENT
+### ========================================
+
+### Create problem (admin only)
+# @name create_problem
+POST {{baseUrl}}/api/admin/problems
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data
+
+{
+    "contest_id": "1",
+    "problem_number": "0",
+    "title": "Sum Two Numbers",
+    "statement": "Given two integers, output their sum.",
+    "testcase": "2\n3 5\n10 20\n8\n30"
+}
+
+###
+
+### Get admin's contest problems list
+GET {{baseUrl}}/api/admin/contests/{{contestId}}/problems
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get problem as admin (should include testcase path)
+GET {{baseUrl}}/api/problem/{{problemId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get problem as user after contest start (should hide testcase path)
+GET {{baseUrl}}/api/problem/{{problemId}}
+Authorization: Bearer {{userToken}}
+
+###
+
+### Try to get problem as user before contest start (should fail)
+GET {{baseUrl}}/api/problem/{{problemId}}
+Authorization: Bearer {{userToken}}
+
+###
+
+### Update problem (admin only)
+PUT {{baseUrl}}/api/admin/problems/{{problemId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "title": "Updated Problem Title",
+    "statement": "Updated problem statement"
+}
+
+###
+
+### Update problem with testcase replacement (admin only)
+PUT {{baseUrl}}/api/admin/problems/{{problemId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "testcase_text": "3\n1 2\n5 10\n100 200\n3\n15\n300"
+}
+
+###
+
+### Delete problem (admin only)
+DELETE {{baseUrl}}/api/admin/problems/{{problemId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### ========================================
+### SUBMISSION MANAGEMENT
+### ========================================
+
+### Submit code (user)
+# @name submit_code
+POST {{baseUrl}}/api/submissions/{{problemId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+    "source_code": "a, b = map(int, input().split())\nprint(a + b)",
+    "language": "python"
+}
+
+###
+
+### Submit code (admin)
+POST {{baseUrl}}/api/submissions/{{problemId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "source_code": "const readline = require('readline');\nconst rl = readline.createInterface({input: process.stdin});\nlet lines = [];\nrl.on('line', line => lines.push(line));\nrl.on('close', () => {\n  const [a, b] = lines[0].split(' ').map(Number);\n  console.log(a + b);\n});",
+    "language": "javascript"
+}
+
+###
+
+### Get my submissions (user)
+GET {{baseUrl}}/api/submissions/my
+Authorization: Bearer {{userToken}}
+
+###
+
+### Get specific submission as owner
+GET {{baseUrl}}/api/submissions/{{submissionId}}
+Authorization: Bearer {{userToken}}
+
+###
+
+### Get specific submission as admin (should work even if not owner)
+GET {{baseUrl}}/api/submissions/{{submissionId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get specific submission as different user (should fail)
+GET {{baseUrl}}/api/submissions/{{submissionId}}
+Authorization: Bearer {{userToken}}
+
+###
+
+### List all submissions with filters (admin only)
+GET {{baseUrl}}/api/admin/submissions?page=1&page_size=20
+Authorization: Bearer {{adminToken}}
+
+###
+
+### List submissions by contest (admin only)
+GET {{baseUrl}}/api/admin/submissions?contest_id={{contestId}}&page=1
+Authorization: Bearer {{adminToken}}
+
+###
+
+### List submissions by user (admin only)
+GET {{baseUrl}}/api/admin/submissions?user_id={{userId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### List submissions by status (admin only)
+GET {{baseUrl}}/api/admin/submissions?status=PASS
+Authorization: Bearer {{adminToken}}
+
+###
+
+### List submissions by language (admin only)
+GET {{baseUrl}}/api/admin/submissions?language=python
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Delete submission (soft delete - admin only)
+DELETE {{baseUrl}}/api/admin/submissions/{{submissionId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Rejudge submission (admin only)
+POST {{baseUrl}}/api/admin/submissions/{{submissionId}}/rejudge
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get contest submissions (user - should fail during contest)
+GET {{baseUrl}}/api/contests/{{contestId}}/submissions
+Authorization: Bearer {{userToken}}
+
+###
+
+### Get contest submissions (admin - should work during contest)
+GET {{baseUrl}}/api/contests/{{contestId}}/submissions
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Get my contest submissions (user - should work anytime)
+GET {{baseUrl}}/api/contests/{{contestId}}/submissions/my
+Authorization: Bearer {{userToken}}
+
+###
+
+### ========================================
+### SSE ENDPOINTS (use in browser or specialized tool)
+### ========================================
+
+### Contest submissions SSE (admin only during contest)
+GET {{baseUrl}}/api/contests/{{contestId}}/sse?q={{adminToken}}
+
+###
+
+### My contest submissions SSE
+GET {{baseUrl}}/api/contests/{{contestId}}/sse/my?q={{userToken}}
+
+###
+
+### Standings SSE
+GET {{baseUrl}}/api/contests/standings/sse/{{contestId}}?q={{userToken}}
+
+###
+
+### My submissions SSE
+GET {{baseUrl}}/api/submissions/sse/my?q={{userToken}}
+
+###
+
+### ========================================
+### VALIDATION TESTS
+### ========================================
+
+### Invalid email format
+POST {{baseUrl}}/api/register
+Content-Type: application/json
+
+{
+    "name": "Test",
+    "email": "invalid-email",
+    "password": "password123"
+}
+
+###
+
+### Password too short
+POST {{baseUrl}}/api/register
+Content-Type: application/json
+
+{
+    "name": "Test",
+    "email": "test@test.com",
+    "password": "123"
+}
+
+###
+
+### Missing required fields
+POST {{baseUrl}}/api/register
+Content-Type: application/json
+
+{
+    "name": "Test"
+}
+
+###
+
+### Invalid language in submission
+POST {{baseUrl}}/api/submissions/{{problemId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+    "source_code": "print('hello')",
+    "language": "invalid_language"
+}
+
+###
+
+### ========================================
+### ACCESS CONTROL TESTS
+### ========================================
+
+### Try admin endpoint without token (should fail)
+GET {{baseUrl}}/api/admin/users
+
+###
+
+### Try admin endpoint with user token (should fail)
+GET {{baseUrl}}/api/admin/users
+Authorization: Bearer {{userToken}}
+
+###
+
+### Try to access other user's submission (should fail)
+GET {{baseUrl}}/api/submissions/999
+Authorization: Bearer {{userToken}}
+
+###
+
+### Logout (just informational)
+GET {{baseUrl}}/api/logout
+Authorization: Bearer {{userToken}}
+
+###
