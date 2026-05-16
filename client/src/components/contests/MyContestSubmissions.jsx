@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import repo, { BASE_URL, key } from '../../data/Repo';
+import repo, { BASE_URL } from '../../data/Repo';
 import { useUser } from '../../contexts/UserContext';
 import { notify } from '../../utils/feedback';
 import { useConfirmDelete } from '../../components/common/ConfirmDelete';
@@ -41,10 +41,9 @@ function MyContestSubmissions() {
   };
 
   // Use SSE hook for live updates
-  const q = localStorage.getItem(key);
   const { data, connected, error: sseError } = useSSE(
-    `${BASE_URL}/contests/${contestId}/sse/my?q=${q}`,
-    { enabled: !!q && !!contestId }
+    `${BASE_URL}/contests/${contestId}/sse/my`,
+    { enabled: !!contestId }
   );
 
     useEffect(() => {
@@ -211,28 +210,28 @@ function MyContestSubmissions() {
   };
 
   return (
-    <div className="p-3 max-w-5xl mx-auto text-xs">
+    <div className="p-4 max-w-5xl mx-auto text-sm">
       <ConfirmDeleteDialog />
       
       {/* Header */}
       <div className="mb-4">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-1">My Contest Submissions</h1>
-           <div className="flex flex-row space-x-1.5">
+           <div className="flex flex-wrap gap-1.5">
           <button
-            className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
-            onClick={() => navigate(`/contest/${id}/submissions`)}
+            className="bg-green-500 text-white px-3 py-2 rounded text-sm hover:bg-green-600"
+            onClick={() => navigate(`/contest/${contestId}/submissions`)}
           >
             Submissions
           </button>
           <button
-            className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-            onClick={() => navigate(`/standings/${id}`)}
+            className="bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
+            onClick={() => navigate(`/standings/${contestId}`)}
           >
             Standings
           </button>
           <button
-            className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+            className="bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
             onClick={() => navigate(`/viewcontest/${contestId}`)}
           >
             Problems
@@ -241,7 +240,7 @@ function MyContestSubmissions() {
         </div>
         
         {/* Connection Status */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-sm">
           {connected && (
             <span className="flex items-center text-green-600 dark:text-green-400">
               <span className="inline-block w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full mr-1.5"></span>
@@ -258,13 +257,13 @@ function MyContestSubmissions() {
       <div className="bg-white dark:bg-gray-800 rounded shadow-sm p-3 mb-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status
             </label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               <option value="">All</option>
               <option value="PASS">PASS</option>
@@ -279,13 +278,13 @@ function MyContestSubmissions() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Language
             </label>
             <select
               value={filters.language}
               onChange={(e) => setFilters({ ...filters, language: e.target.value })}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               <option value="">All</option>
               {LANGUAGES.map((lang) => (
@@ -297,13 +296,13 @@ function MyContestSubmissions() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Problem
             </label>
             <select
               value={filters.problem}
               onChange={(e) => setFilters({ ...filters, problem: e.target.value })}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               <option value="">All</option>
               {problems.map((prob) => (
@@ -315,13 +314,13 @@ function MyContestSubmissions() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Sort
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
@@ -331,7 +330,7 @@ function MyContestSubmissions() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Search
           </label>
           <input
@@ -339,7 +338,7 @@ function MyContestSubmissions() {
             placeholder="Search by problem..."
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
           />
         </div>
       </div>
@@ -348,7 +347,7 @@ function MyContestSubmissions() {
       {loading && <SkeletonList rows={5} />}
       {!loading && sseError && <ErrorState message="Failed to load submissions." onRetry={handleRetry} />}
       {!loading && !sseError && filteredSubmissions.length === 0 && (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-xs">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
           No submissions found.
         </div>
       )}
@@ -362,23 +361,23 @@ function MyContestSubmissions() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-gray-500 dark:text-gray-400 text-xs">#{submission.id}</span>
-                    <h3 className="font-semibold text-xs text-gray-900 dark:text-white truncate">
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">#{submission.id}</span>
+                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate">
                       {submission.problem_title}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <span>{getLanguageLabel(submission.language)}</span>
                     <span>{new Date(submission.created_at || submission.submitted_time).toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-28">
-                    <StatusChip status={submission.status} />
+                  <div className="max-w-[220px]">
+                    <StatusChip status={submission.status} className="max-w-[220px]" />
                   </div>
                   <button
                     onClick={() => handleDetails(submission)}
-                    className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors whitespace-nowrap"
+                    className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
                   >
                     Details
                   </button>
@@ -402,21 +401,21 @@ function MyContestSubmissions() {
                 <button
                   onClick={() => openManualJudge(selectedSubmission)}
                   disabled={actionLoading}
-                  className="px-2 py-1 text-[10px] bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
                   Manual Judge
                 </button>
                 <button
                   onClick={() => handleRejudge(selectedSubmission.id)}
                   disabled={actionLoading}
-                  className="px-2 py-1 text-[10px] bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
                   {actionLoading ? 'Processing...' : 'Rejudge'}
                 </button>
                 <button
                   onClick={() => handleDelete(selectedSubmission.id)}
                   disabled={actionLoading}
-                  className="px-2 py-1 text-[10px] bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
                   {actionLoading ? 'Processing...' : 'Delete'}
                 </button>
@@ -425,7 +424,7 @@ function MyContestSubmissions() {
           }
         >
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-y-0.5 pb-1 border-b border-gray-200 dark:border-gray-700 text-xs">
+            <div className="flex flex-wrap items-center gap-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 text-sm">
               <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
               <span className="mr-2"><StatusChip status={selectedSubmission.status} /></span>
               <span className="font-medium text-gray-700 dark:text-gray-300">Language:</span>
@@ -433,7 +432,7 @@ function MyContestSubmissions() {
               <span className="font-medium text-gray-700 dark:text-gray-300">Problem:</span>
               <span className="text-gray-900 dark:text-white mr-2 truncate max-w-xs">{selectedSubmission.problem_title}</span>
               <span className="font-medium text-gray-700 dark:text-gray-300">Submitted:</span>
-              <span className="text-gray-900 dark:text-white text-[10px]">
+              <span className="text-gray-900 dark:text-white text-sm">
                 {new Date(selectedSubmission.created_at || selectedSubmission.submitted_time).toLocaleString()}
               </span>
             </div>
@@ -441,7 +440,7 @@ function MyContestSubmissions() {
             {selectedSubmission.status !== 'PASS' && selectedSubmission.message && (
               <div>
                 <h3 className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">Logs</h3>
-                <div className="bg-gray-50 dark:bg-gray-900 p-2 rounded text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono text-xs">
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono text-sm">
                   {stripMarkdown(selectedSubmission.message)}
                 </div>
               </div>
@@ -449,7 +448,7 @@ function MyContestSubmissions() {
 
             <div>
               <h3 className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">Code</h3>
-              <div className="text-[9px]">
+              <div className="text-sm">
                 <CodeHighlight
                   code={selectedSubmission.code || selectedSubmission.source_code}
                   language={selectedSubmission.language}

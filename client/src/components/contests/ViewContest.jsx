@@ -60,57 +60,57 @@ function ViewContest() {
   };
 
   return (
-    <div className="px-3 py-3 text-xs max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-        <h1 className="font-bold text-sm mr-2 mb-2 sm:mb-0 text-gray-900 dark:text-white">{contest.title}</h1>
+    <div className="px-4 py-4 text-sm max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
+        <h1 className="font-bold text-xl mr-2 mb-2 sm:mb-0 text-gray-900 dark:text-white">{contest.title}</h1>
 
-        <div className="flex flex-row space-x-1.5">
+        <div className="grid grid-cols-2 sm:flex gap-1.5 w-full sm:w-auto">
           <button
-            className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+            className="bg-green-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-green-600 whitespace-normal"
             onClick={() => navigate(`/contest/${id}/submissions`)}
           >
             Submissions
           </button>
           <button 
-            className="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600"
+            className="bg-yellow-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-yellow-600 whitespace-normal"
             onClick={() => navigate(`/contest/${id}/submissions/my`)}
           >
             My Submissions
           </button>
           <button
-            className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+            className="bg-blue-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-blue-600 whitespace-normal col-span-2 sm:col-span-1"
             onClick={() => navigate(`/standings/${id}`)}
           >
             Standings
           </button>
         </div>
       </div>
-      <div className="mb-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100">
+      <div className="mb-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100">
         Use of generative AI tools (ChatGPT, Claude, DeepSeek, etc.) is strictly prohibited. You may only browse programming language documentation.
       </div>
-      <div className="mb-1 text-xs text-gray-600 dark:text-gray-400">
+      <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">
         <strong>Start:</strong> {contest.start_time && new Date(contest.start_time).toLocaleString()}
       </div>
-      <div className="mb-1 text-xs text-gray-600 dark:text-gray-400">
+      <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">
         <strong>Duration:</strong> {contest.duration} min
       </div>
-      <div className="mb-3 text-blue-600 dark:text-blue-400 font-semibold text-xs">{remaining}</div>
-      <h2 className="font-bold mb-2 text-sm text-gray-900 dark:text-white">Problems</h2>
+      <div className="mb-4 text-blue-600 dark:text-blue-400 font-semibold text-base">{remaining}</div>
+      <h2 className="font-bold mb-3 text-lg text-gray-900 dark:text-white">Problems</h2>
       <div className="space-y-1.5">
         {problems
           .sort((a, b) => a.problem_number - b.problem_number)
           .map((problem, idx) => (
             <div
               key={problem.id}
-              className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-700 flex items-center space-x-3 border border-gray-200 dark:border-gray-700"
+              className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-700 flex items-center gap-2 sm:gap-3 border border-gray-200 dark:border-gray-700"
               onClick={() => navigate(`/problem/${problem.id}`)}
             >
-              <span className="font-semibold text-xs text-gray-900 dark:text-white">
+              <span className="font-semibold text-sm text-gray-900 dark:text-white">
                 Problem {(problem.problem_number ?? idx) + 1}
               </span>
-              <span className="font-bold text-xs text-gray-900 dark:text-white">{problem.title}</span>
+              <span className="font-bold text-sm text-gray-900 dark:text-white">{problem.title}</span>
               {problem.is_special && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
                   Special
                 </span>
               )}

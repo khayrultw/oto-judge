@@ -175,78 +175,76 @@ const ContestDetailsPage = () => {
             .sort((a, b) => (a.problem_number ?? 0) - (b.problem_number ?? 0))
             .map((problem, idx) => (
               <div
-              key={problem.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-200 dark:bg-gray-700 rounded-md shadow-sm w-auto mb-2"
-            >
-              {/* ID with fixed width */}
-              <div className="w-[60px] text-left text-sm font-mono shrink-0 text-gray-900 dark:text-white">
-                ID: {problem.id}
-              </div>
-            
-              {/* Problem Number (1, 2, 3...) */}
-              <div className="w-[40px] text-left text-sm font-semibold shrink-0 text-gray-900 dark:text-white">
-                {(problem.problem_number ?? idx) + 1}
-              </div>
-            
-              {/* Title with fixed width and ellipsis */}
-              <div className="w-[250px] text-left text-sm truncate text-gray-900 dark:text-white">
-                Title: {problem.title || 'N/A'}
-              </div>
+                key={problem.id}
+                className="p-3 bg-gray-200 dark:bg-gray-700 rounded-md shadow-sm mb-2"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[80px_70px_1fr_220px_auto] gap-2 items-start">
+                  <div className="text-sm font-mono text-gray-900 dark:text-white">ID: {problem.id}</div>
 
-              {problem.is_special && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                  Special Judge
-                </span>
-              )}
-            
-              {/* Test case link */}
-              <div className="text-left text-sm w-[200px] truncate text-gray-900 dark:text-white">
-                Test Case: {problem.test_case_path ? (
-                  <a
-                    href={problem.test_case_path.startsWith('/store') ? problem.test_case_path : `${baseURL}/${problem.test_case_path}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 underline"
-                  >
-                    Download
-                  </a>
-                ) : 'N/A'}
-              </div>
-            
-              {/* Admin-only buttons */}
-              {user.role === 'admin' && (
-                <div className="flex flex-row gap-2 mt-2 sm:mt-0 shrink-0">
-                  <button
-                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                    onClick={() => handleEditProblem(problem)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    onClick={async () => {
-                      await confirmDelete({
-                        entity: 'problem',
-                        onConfirm: async () => {
-                          await notify.promise(
-                            repo.deleteProblem(problem.id),
-                            {
-                              loading: 'Deleting...',
-                              success: 'Deleted.',
-                              error: 'Delete failed.',
-                            }
-                          );
-                          const res = await repo.getContest(id);
-                          setProblems(res.data.problems || []);
-                        }
-                      });
-                    }}
-                  >
-                    Delete
-                  </button>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {(problem.problem_number ?? idx) + 1}
+                  </div>
+
+                  <div className="text-sm text-gray-900 dark:text-white break-words">
+                    <span className="font-semibold">Title:</span> {problem.title || 'N/A'}
+                  </div>
+
+                  <div className="text-sm text-gray-900 dark:text-white break-words">
+                    <span className="font-semibold">Test Case:</span>{' '}
+                    {problem.test_case_path ? (
+                      <a
+                        href={problem.test_case_path.startsWith('/store') ? problem.test_case_path : `${baseURL}/${problem.test_case_path}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 underline"
+                      >
+                        Download
+                      </a>
+                    ) : 'N/A'}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {problem.is_special && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                        Special Judge
+                      </span>
+                    )}
+
+                    {user.role === 'admin' && (
+                      <>
+                        <button
+                          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                          onClick={() => handleEditProblem(problem)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                          onClick={async () => {
+                            await confirmDelete({
+                              entity: 'problem',
+                              onConfirm: async () => {
+                                await notify.promise(
+                                  repo.deleteProblem(problem.id),
+                                  {
+                                    loading: 'Deleting...',
+                                    success: 'Deleted.',
+                                    error: 'Delete failed.',
+                                  }
+                                );
+                                const res = await repo.getContest(id);
+                                setProblems(res.data.problems || []);
+                              }
+                            });
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
             
           ))}
         </div>
@@ -260,8 +258,8 @@ const ContestDetailsPage = () => {
       </div>
 
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-800 py-10 px-10 rounded-md w-full max-w-6xl max-h-[80vh] overflow-y-auto my-8">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-3">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-8 rounded-md w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleCreateProblem}>
               <div className="mb-4">
                 <label className="block text-sm font-bold mb-2 text-gray-900 dark:text-white">Problem Number</label>
@@ -325,10 +323,10 @@ const ContestDetailsPage = () => {
                 </label>
               </div>
               {error && <div className="mb-4 text-red-500 dark:text-red-400">{error}</div>}
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
-                  className="mr-4 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                  className="bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
                   onClick={closePopup}
                 >
                   Cancel
@@ -346,8 +344,8 @@ const ContestDetailsPage = () => {
       )}
 
       {editPopup.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-800 py-10 px-10 rounded-md w-full max-w-6xl max-h-[80vh] overflow-y-auto my-8">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-3">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-8 rounded-md w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Problem</h2>
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
@@ -384,10 +382,10 @@ const ContestDetailsPage = () => {
                 </label>
               </div>
               {error && <div className="mb-4 text-red-500 dark:text-red-400">{error}</div>}
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
-                  className="mr-4 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                  className="bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
                   onClick={closeEditPopup}
                 >
                   Cancel

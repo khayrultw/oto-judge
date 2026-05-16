@@ -69,7 +69,7 @@ const CodeHighlight = ({ code, language, filename = 'code.txt' }) => {
       >
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
           <pre
-            className={`${className} p-4 rounded-md overflow-auto text-xs max-h-[60vh]`}
+            className={`${className} p-4 rounded-md overflow-auto text-sm max-h-[60vh]`}
             style={style}
           >
             {tokens.map((line, i) => (

@@ -1,12 +1,17 @@
 
 const StandingsTable = ({ standings }) => {
   // Find the max problem number to determine columns
-  const maxProblemNumber = Math.max(
-    ...standings.flatMap(user => user.problems.map(p => p.problem_number))
-  );
+  const maxProblemNumber = standings.length
+    ? Math.max(
+        ...standings.flatMap((user) => (user.problems || []).map((p) => p.problem_number))
+      )
+    : -1;
 
   // Generate problem column headers
-  const problemHeaders = Array.from({ length: maxProblemNumber + 1 }, (_, i) => (i + 1).toString());
+  const problemHeaders =
+    maxProblemNumber >= 0
+      ? Array.from({ length: maxProblemNumber + 1 }, (_, i) => (i + 1).toString())
+      : [];
 
   // Helper to get problem status for a user
   const getProblemCell = (problems, problemIdx) => {
@@ -33,48 +38,74 @@ const StandingsTable = ({ standings }) => {
   );
 
   return (
-    <div className="overflow-x-auto w-full max-w-5xl mx-auto px-1 sm:px-2 lg:px-4">
-      <table className="min-w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs md:text-base">
-        <thead>
-          <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-            <th className="py-1 md:py-2 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-xs md:text-base text-gray-900 dark:text-white">Rank</th>
-            <th className="py-1 md:py-2 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-xs md:text-base text-gray-900 dark:text-white">User</th>
-            <th className="py-1 md:py-2 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-xs md:text-base text-gray-900 dark:text-white">Solved</th>
-            <th className="py-1 md:py-2 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-xs md:text-base text-gray-900 dark:text-white">Penalty</th>
-            {problemHeaders.map((header, idx) => (
-              <th
-                key={idx}
-                className="py-1 md:py-2 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-center min-w-[16px] md:min-w-[48px] text-xs md:text-base text-gray-900 dark:text-white"
-                style={{ textAlign: 'center', minWidth: 16 }}
-              >
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {filteredStandings.map((user, idx) => (
-            <tr key={user.user_id} className="text-gray-900 dark:text-white">
-              <td className="py-1 md:py-2 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-xs md:text-base">{user.rank ?? idx + 1}</td>
-              <td className="py-1 md:py-2 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-xs md:text-base">{user.user_name}</td>
-              <td className="py-1 md:py-2 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-xs md:text-base">{user.solved}</td>
-              <td className="py-1 md:py-2 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-xs md:text-base">{user.penalty ?? 0}</td>
-              {problemHeaders.map((_, pIdx) => {
-                const cell = getProblemCell(user.problems, pIdx);
+    <div className="w-full max-w-5xl mx-auto px-1 sm:px-2 lg:px-4">
+      <div className="sm:hidden space-y-2">
+        {filteredStandings.map((user, idx) => (
+          <div key={user.user_id} className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2">
+            <div className="flex items-center justify-between text-xs text-gray-700 dark:text-gray-300 mb-1">
+              <span>#{user.rank ?? idx + 1}</span>
+              <span>Solved: {user.solved}</span>
+              <span>Time: {user.penalty ?? 0}</span>
+            </div>
+            <div className="font-semibold text-sm text-gray-900 dark:text-white mb-2 break-words">{user.user_name}</div>
+            <div className="grid grid-cols-4 gap-1 text-xs font-mono">
+              {problemHeaders.map((header, pIdx) => {
+                const cell = getProblemCell(user.problems || [], pIdx);
                 return (
-                  <td
-                    key={pIdx}
-                    className={`py-1 md:py-2 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-center font-mono text-xs md:text-lg ${getVerdictClass(cell)}`}
-                    style={{ textAlign: 'center', fontFamily: 'monospace', minWidth: 16 }}
-                  >
-                    <b>{cell}</b>
-                  </td>
+                  <div key={pIdx} className="rounded border border-gray-200 dark:border-gray-700 px-1.5 py-1 text-center">
+                    <div className="text-gray-500 dark:text-gray-400">{header}</div>
+                    <div className={getVerdictClass(cell)}>{cell || '-'}</div>
+                  </div>
                 );
               })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="min-w-[720px] w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm md:text-base">
+          <thead>
+            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
+              <th className="py-2 md:py-3 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-sm md:text-base text-gray-900 dark:text-white">Rank</th>
+              <th className="py-2 md:py-3 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-sm md:text-base text-gray-900 dark:text-white">User</th>
+              <th className="py-2 md:py-3 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-sm md:text-base text-gray-900 dark:text-white">Solved</th>
+              <th className="py-2 md:py-3 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-sm md:text-base text-gray-900 dark:text-white">Time</th>
+              {problemHeaders.map((header, idx) => (
+                <th
+                  key={idx}
+                  className="py-2 md:py-3 px-2 md:px-4 border border-gray-300 dark:border-gray-600 text-center min-w-[32px] md:min-w-[48px] text-sm md:text-base text-gray-900 dark:text-white"
+                  style={{ textAlign: 'center', minWidth: 32 }}
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredStandings.map((user, idx) => (
+              <tr key={user.user_id} className="text-gray-900 dark:text-white">
+                <td className="py-2 md:py-3 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-sm md:text-base">{user.rank ?? idx + 1}</td>
+                <td className="py-2 md:py-3 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-sm md:text-base">{user.user_name}</td>
+                <td className="py-2 md:py-3 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-sm md:text-base">{user.solved}</td>
+                <td className="py-2 md:py-3 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-sm md:text-base">{user.penalty ?? 0}</td>
+                {problemHeaders.map((_, pIdx) => {
+                  const cell = getProblemCell(user.problems || [], pIdx);
+                  return (
+                    <td
+                      key={pIdx}
+                      className={`py-2 md:py-3 px-2 md:px-4 border-b border-gray-300 dark:border-gray-600 text-center font-mono text-sm md:text-lg ${getVerdictClass(cell)}`}
+                      style={{ textAlign: 'center', fontFamily: 'monospace', minWidth: 32 }}
+                    >
+                      <b>{cell}</b>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

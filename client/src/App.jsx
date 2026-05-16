@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Route, Routes, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Outlet, Navigate, useLocation, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { Bars3Icon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/Sidebar';
 import HomePage from './components/home/HomePage';
@@ -89,14 +90,73 @@ function AppContent() {
 
   return (
     <Router>
-        <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-          {isLoggedIn && <Sidebar />}
+      <AppLayout isLoggedIn={isLoggedIn} />
+    </Router>
+  );
+}
 
-          <div
-            className={`flex-grow p-2 md:p-4 transition-all duration-200 ${
-              isLoggedIn ? "ml-14" : ""
-            }`}
-          >
+function AppLayout({ isLoggedIn }) {
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  const getPageTitle = (pathname) => {
+    if (pathname === '/') return 'Home';
+    if (pathname.startsWith('/submissions')) return 'Submissions';
+    if (pathname.startsWith('/standings')) return 'Standings';
+    if (pathname.startsWith('/viewcontest')) return 'Contest';
+    if (pathname.startsWith('/contest/') && pathname.includes('/submissions/my')) return 'My Contest Submissions';
+    if (pathname.startsWith('/contest/') && pathname.includes('/submissions')) return 'Contest Submissions';
+    if (pathname.startsWith('/contest/') && pathname.includes('/problem/')) return 'Problem';
+    if (pathname.startsWith('/problem/')) return 'Problem';
+    if (pathname.startsWith('/profile')) return 'Profile';
+    if (pathname.startsWith('/guidelines')) return 'Guidelines';
+    if (pathname === '/admin') return 'Admin Dashboard';
+    if (pathname.startsWith('/admin/users')) return 'Admin Users';
+    if (pathname.startsWith('/admin/submissions')) return 'Admin Submissions';
+    if (pathname.startsWith('/contests')) return 'Contests';
+    return 'Oto Judge';
+  };
+
+  const showNavbar = isLoggedIn && !isAuthPage;
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      {showNavbar && (
+        <header className="sticky top-0 z-30 border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur">
+          <div className="h-14 px-3 sm:px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                aria-label="Open navigation"
+              >
+                <Bars3Icon className="h-6 w-6" />
+              </button>
+              <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                {getPageTitle(location.pathname)}
+              </h1>
+            </div>
+
+            <Link
+              to="/profile"
+              className="inline-flex items-center justify-center p-1 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              aria-label="Go to profile"
+            >
+              <UserCircleIcon className="h-8 w-8" />
+            </Link>
+          </div>
+        </header>
+      )}
+
+      {isLoggedIn && !isAuthPage && <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
+
+      <div className="min-w-0 w-full p-2 md:p-4">
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
@@ -128,9 +188,8 @@ function AppContent() {
             {/* Catch all route - redirect to home or login */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </div>
       </div>
-    </Router>
+    </div>
   );
 }
 

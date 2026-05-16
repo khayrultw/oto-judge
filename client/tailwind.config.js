@@ -1,3 +1,5 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -12,6 +14,11 @@ module.exports = {
     'bg-gray-100', 'text-gray-800', 'dark:bg-gray-700', 'dark:text-gray-200',
   ],
   theme: {
+    fontSize: {
+      ...defaultTheme.fontSize,
+      xs: ['0.9375rem', { lineHeight: '1.45rem' }],
+      sm: ['1rem', { lineHeight: '1.6rem' }],
+    },
     extend: {},
   },
   plugins: [],

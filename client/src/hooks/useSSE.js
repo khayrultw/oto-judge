@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { key } from '../data/Repo';
 
 /**
  * Custom hook for Server-Sent Events with auto-reconnect
@@ -29,6 +30,14 @@ export const useSSE = (url, options = {}) => {
   const retryTimeoutRef = useRef(null);
   const isMountedRef = useRef(true);
 
+  const buildAuthenticatedUrl = useCallback((rawUrl) => {
+    const token = localStorage.getItem(key);
+    if (!token || !rawUrl) return rawUrl;
+    if (rawUrl.includes('q=')) return rawUrl;
+    const separator = rawUrl.includes('?') ? '&' : '?';
+    return `${rawUrl}${separator}q=${encodeURIComponent(token)}`;
+  }, []);
+
   const calculateBackoff = useCallback(() => {
     // Exponential backoff with jitter
     const exponentialDelay = Math.min(
@@ -48,7 +57,7 @@ export const useSSE = (url, options = {}) => {
     }
 
     try {
-      const es = new EventSource(url);
+      const es = new EventSource(buildAuthenticatedUrl(url));
 
       es.onopen = () => {
         if (!isMountedRef.current) return;
@@ -98,7 +107,7 @@ export const useSSE = (url, options = {}) => {
       setError('Failed to establish connection');
       setConnected(false);
     }
-  }, [enabled, url, maxRetries, calculateBackoff]);
+  }, [enabled, url, maxRetries, calculateBackoff, buildAuthenticatedUrl]);
 
   useEffect(() => {
     isMountedRef.current = true;

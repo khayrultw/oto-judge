@@ -199,7 +199,7 @@ const ContestsPage = () => {
   };
 
   return (
-    <div className="p-4 md:px-24 lg:px-48 xl:px-64 text-xs md:text-base">
+    <div className="p-3 sm:p-4 md:px-8 lg:px-12 xl:px-16 text-sm">
       <ConfirmDeleteDialog />
       <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Contests</h1>
       
@@ -262,8 +262,8 @@ const ContestsPage = () => {
 
       {/* Popup for contest creation */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-md w-full max-w-2xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-3">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-8 rounded-md w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Create New Contest</h2>
 
             <form onSubmit={handleCreateContest}>
@@ -305,10 +305,10 @@ const ContestsPage = () => {
               </div>
 
               {createError && <div className="mb-2 text-red-500 dark:text-red-400">{createError}</div>}
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
-                  className="mr-4 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                  className="bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
                   onClick={togglePopup}
                   disabled={createLoading}
                 >
@@ -329,8 +329,8 @@ const ContestsPage = () => {
 
       {/* Popup for contest editing */}
       {editingContest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-md w-full max-w-2xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-3">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-8 rounded-md w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Contest</h2>
             <form onSubmit={handleUpdateContest}>
               <div className="mb-4">

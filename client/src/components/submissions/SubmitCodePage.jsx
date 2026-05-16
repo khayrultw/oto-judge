@@ -338,7 +338,7 @@ function SubmitCodePage() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-700 dark:text-gray-300">Status:</span>
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
                   testResult.passed
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
                     : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
@@ -351,15 +351,15 @@ function SubmitCodePage() {
             {/* Message */}
             {testResult.message && (
               <div>
-                <span className="font-semibold text-gray-700 dark:text-gray-300">Message:</span>
-                <p className="mt-1 text-gray-600 dark:text-gray-400">{testResult.message}</p>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">Details:</span>
+                <p className="mt-2 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">{testResult.message}</p>
               </div>
             )}
 
             {/* Output */}
             <div>
               <span className="font-semibold text-gray-700 dark:text-gray-300">Output:</span>
-              <pre className="mt-1 p-3 bg-gray-100 dark:bg-gray-900 rounded-md text-sm font-mono text-gray-800 dark:text-gray-200 overflow-auto max-h-40 whitespace-pre-wrap">
+              <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg text-sm font-mono text-gray-800 dark:text-gray-200 overflow-auto max-h-40 whitespace-pre-wrap">
                 {testResult.output || '(No output)'}
               </pre>
             </div>
@@ -368,7 +368,7 @@ function SubmitCodePage() {
             {testResult.expected_output && (
               <div>
                 <span className="font-semibold text-gray-700 dark:text-gray-300">Expected Output:</span>
-                <pre className="mt-1 p-3 bg-gray-100 dark:bg-gray-900 rounded-md text-sm font-mono text-gray-800 dark:text-gray-200 overflow-auto max-h-40 whitespace-pre-wrap">
+                <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg text-sm font-mono text-gray-800 dark:text-gray-200 overflow-auto max-h-40 whitespace-pre-wrap">
                   {testResult.expected_output}
                 </pre>
               </div>
@@ -378,7 +378,7 @@ function SubmitCodePage() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setTestResultModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 Close
               </button>

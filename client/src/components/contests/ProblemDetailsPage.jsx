@@ -8,6 +8,8 @@ import { useTheme } from '../../hooks/useTheme';
 import { notify } from '../../utils/feedback';
 import Modal from '../common/Modal';
 
+const ACTION_COOLDOWN_SECONDS = 5;
+
 function ProblemDetailsPage() {
   const { id, problemId, contestId } = useParams();
   const navigate = useNavigate();
@@ -30,6 +32,8 @@ function ProblemDetailsPage() {
   const [testRunning, setTestRunning] = useState(false);
   const [testResultModalOpen, setTestResultModalOpen] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [actionCooldownLeft, setActionCooldownLeft] = useState(0);
+  const [isMobileLayout, setIsMobileLayout] = useState(() => window.innerWidth < 1024);
 
   const effectiveProblemId = problemId || id;
   const effectiveContestId = contestId || problem?.contest_id;
@@ -111,10 +115,36 @@ function ProblemDetailsPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  useEffect(() => {
+    if (actionCooldownLeft <= 0) return;
+    const timer = setInterval(() => {
+      setActionCooldownLeft((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [actionCooldownLeft]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobileLayout(window.innerWidth < 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const startActionCooldown = (seconds = ACTION_COOLDOWN_SECONDS) => {
+    setActionCooldownLeft((prev) => Math.max(prev, seconds));
+  };
+
+  const applyRetryCooldown = (err) => {
+    const retryAfter = Number(err?.response?.data?.retry_after_seconds);
+    if (Number.isFinite(retryAfter) && retryAfter > 0) {
+      startActionCooldown(Math.ceil(retryAfter));
+    }
+  };
+
   const handleSubmit = async (event) => {
     event?.preventDefault();
-    if (!language || !code.trim()) return;
+    if (!language || !code.trim() || actionCooldownLeft > 0) return;
 
+    startActionCooldown();
     setSubmitting(true);
     try {
       await repo.submitCode(effectiveProblemId, {
@@ -129,7 +159,8 @@ function ProblemDetailsPage() {
       notify.success('Code submitted successfully!');
       navigate(`/contest/${effectiveContestId}/submissions/my`, { replace: true });
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Failed to submit code. Please try again.';
+      applyRetryCooldown(err);
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to submit code. Please try again.';
       notify.error(errorMsg);
     } finally {
       setSubmitting(false);
@@ -142,7 +173,9 @@ function ProblemDetailsPage() {
       notify.error('Please select a language and enter your code');
       return;
     }
+    if (actionCooldownLeft > 0) return;
 
+    startActionCooldown();
     setTestRunning(true);
     try {
       const res = await repo.testRun({
@@ -154,6 +187,7 @@ function ProblemDetailsPage() {
       setTestResult(res.data);
       setTestResultModalOpen(true);
     } catch (err) {
+      applyRetryCooldown(err);
       const errorMsg = err.response?.data?.error || 'Failed to run test. Please try again.';
       notify.error(errorMsg);
     } finally {
@@ -166,12 +200,12 @@ function ProblemDetailsPage() {
     (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
-        if (language && code.trim() && !submitting) {
+        if (language && code.trim() && !submitting && actionCooldownLeft === 0) {
           handleSubmit(event);
         }
       }
     },
-    [language, code, submitting]
+    [language, code, submitting, actionCooldownLeft]
   );
 
   const handleBack = () => {
@@ -221,60 +255,65 @@ function ProblemDetailsPage() {
     : '';
 
   const selectedLang = getLanguageById(language);
-  const isSubmitDisabled = !language || !code.trim() || submitting;
+  const isActionCoolingDown = actionCooldownLeft > 0;
+  const isSubmitDisabled = !language || !code.trim() || submitting || isActionCoolingDown;
+  const editorHeight = isMobileLayout ? '48vh' : '100%';
 
   return (
-    <div className="fixed inset-0 ml-14 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-gray-50 dark:bg-gray-900 text-sm">
       {/* Header */}
-      <div className="flex-shrink-0 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-3 py-2">
-        <div className="flex items-center justify-between gap-3">
+      <div className="flex-shrink-0 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-3">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={handleBack}
-              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white shrink-0 text-xs"
+              className="inline-flex items-center justify-center gap-1.5 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0 text-sm"
               title="Back to contest"
             >
-              <ArrowLeftIcon className="h-4 w-4" />
+              <ArrowLeftIcon className="h-5 w-5" />
               <span className="hidden sm:inline">Back</span>
             </button>
-            <h1 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate">
               {problemLetter && `${problemLetter}. `}
               {problem.title}
             </h1>
             {problem.is_special && (
-              <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 shrink-0">
+              <span className="hidden sm:inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 shrink-0">
                 Special
               </span>
             )}
           </div>
           
           {/* Action buttons and Language selector */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:justify-end">
             {hasUnsavedChanges && (
-              <span className="hidden md:inline text-[10px] text-amber-600 dark:text-amber-400">● Unsaved</span>
+              <span className="hidden md:inline text-sm text-amber-600 dark:text-amber-400">● Unsaved</span>
+            )}
+            {isActionCoolingDown && (
+              <span className="hidden md:inline text-sm text-red-600 dark:text-red-400">Cooldown: {actionCooldownLeft}s</span>
             )}
             <button
               type="button"
               onClick={handleTestRun}
-              disabled={testRunning || !language || !code.trim()}
-              className="flex items-center justify-center gap-1 px-3 py-1.5 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              disabled={testRunning || !language || !code.trim() || isActionCoolingDown}
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-gray-600 text-white rounded text-xs sm:text-sm hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              <PlayIcon className="h-3.5 w-3.5" />
-              {testRunning ? 'Running...' : 'Test'}
+              <PlayIcon className="h-4 w-4" />
+              {testRunning ? 'Running...' : isActionCoolingDown ? `Wait ${actionCooldownLeft}s` : 'Test'}
             </button>
             <button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitDisabled}
-              className="flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-blue-600 text-white rounded text-xs sm:text-sm hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              <PaperAirplaneIcon className="h-3.5 w-3.5" />
-              {submitting ? 'Submitting...' : 'Submit'}
+              <PaperAirplaneIcon className="h-4 w-4" />
+              {submitting ? 'Submitting...' : isActionCoolingDown ? `Wait ${actionCooldownLeft}s` : 'Submit'}
             </button>
             <select
               value={language}
               onChange={handleLanguageChange}
-              className="px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs"
+              className="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
             >
               <option value="">Language</option>
               {LANGUAGES.map((lang) => (
@@ -288,52 +327,52 @@ function ProblemDetailsPage() {
       </div>
 
       {/* Main content - Split view */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         {/* Left Panel - Problem Description and Input */}
-        <div className="lg:w-1/2 overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 p-2">
+        <div className="lg:w-1/2 overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 p-3 min-h-[36vh] lg:min-h-0">
           {/* Problem Statement */}
-          <div className="bg-white dark:bg-gray-800 rounded shadow-sm p-3 mb-2">
+          <div className="bg-white dark:bg-gray-800 rounded shadow-sm p-4 mb-3">
             {problem.is_special && (
-              <div className="mb-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/30 dark:text-amber-200">
+              <div className="mb-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-900/30 dark:text-amber-200">
                 Special judge: passing solutions will be queued for manual review.
               </div>
             )}
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 pb-1.5 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
               Problem Statement
             </h2>
             {problem.statement ? (
-              <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 leading-relaxed text-xs">
+              <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100 leading-relaxed text-base">
                 {problem.statement}
               </div>
             ) : (
-              <div className="text-gray-500 dark:text-gray-400 py-2 text-center text-xs">
+              <div className="text-gray-500 dark:text-gray-400 py-3 text-center text-sm">
                 No statement available.
               </div>
             )}
           </div>
           
           {/* Input textbox */}
-          <div className="bg-white dark:bg-gray-800 rounded shadow-sm p-2">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <div className="bg-white dark:bg-gray-800 rounded shadow-sm p-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Custom Input
             </label>
             <textarea
               value={testInput}
               onChange={(e) => setTestInput(e.target.value)}
               placeholder="Enter test input..."
-              className="w-full h-20 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-xs resize-none"
+              className="w-full h-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-sm resize-none"
             />
           </div>
         </div>
 
         {/* Right Panel - Code Editor */}
-        <div className="lg:w-1/2 flex flex-col overflow-hidden">
+        <div className="lg:w-1/2 flex flex-col min-h-[48vh] lg:min-h-0">
           {/* Code Editor */}
-          <div className="flex-1 overflow-hidden p-2 pb-0">
+          <div className="flex-1 min-h-[42vh] overflow-hidden p-3 pb-0">
             <div className="h-full border border-gray-300 dark:border-gray-600 rounded overflow-hidden bg-white dark:bg-gray-800">
               <CodeMirror
                 value={code}
-                height="100%"
+                height={editorHeight}
                 theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
                 extensions={selectedLang?.cmLanguage ? [selectedLang.cmLanguage()] : []}
                 onChange={(value) => setCode(value)}
@@ -345,14 +384,14 @@ function ProblemDetailsPage() {
                   foldGutter: true,
                   lineWrapping: true,
                 }}
-                className="h-full text-xs [&_.cm-editor]:!h-full [&_.cm-scroller]:!overflow-auto"
+                className="h-full text-sm [&_.cm-editor]:!h-full [&_.cm-scroller]:!overflow-auto [&_.cm-editor]:!min-h-[48vh] lg:[&_.cm-editor]:!min-h-0"
               />
             </div>
           </div>
           
           {/* Keyboard shortcut hint */}
-          <div className="flex-shrink-0 p-2">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+          <div className="flex-shrink-0 p-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Ctrl+Enter to submit
             </p>
           </div>

@@ -2,8 +2,8 @@ import React from "react";
 
 export default function GuidelinePage() {
   return (
-    <div className="p-4 max-w-2xl mx-auto text-xs">
-      <h1 className="text-lg font-bold mb-3 text-gray-800 dark:text-white">
+    <div className="p-5 max-w-3xl mx-auto text-sm">
+      <h1 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
         Code Submission Guidelines
       </h1>
 
@@ -13,8 +13,8 @@ export default function GuidelinePage() {
         <li>Your program output must match the expected output <span className="font-semibold">exactly</span> (no extra spaces or lines).</li>
       </ul>
 
-      <h2 className="text-sm font-semibold mb-1.5 text-gray-800 dark:text-white">Kotlin Example:</h2>
-      <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-3 rounded overflow-x-auto text-[11px] mb-4">
+      <h2 className="text-base font-semibold mb-2 text-gray-800 dark:text-white">Kotlin Example:</h2>
+      <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-4 rounded overflow-x-auto text-sm mb-4">
 {`fun main() {
     var inp = readln().trim().lowercase()
     println(inp)
@@ -34,8 +34,8 @@ export default function GuidelinePage() {
 }`}
       </pre>
 
-      <h2 className="text-sm font-semibold mb-1.5 text-gray-800 dark:text-white">JavaScript Example:</h2>
-      <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-3 rounded overflow-x-auto text-[11px] mb-4">
+      <h2 className="text-base font-semibold mb-2 text-gray-800 dark:text-white">JavaScript Example:</h2>
+      <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-4 rounded overflow-x-auto text-sm mb-4">
 {`var ch = readline();
 var upper = ch.toUpperCase();
 print(upper);
@@ -53,8 +53,8 @@ var d = parseFloat(readline().trim());
 var arr = readline().split(" ").map(function(x) { return parseFloat(x); });`}
       </pre>
 
-      <h2 className="text-sm font-semibold mb-1.5 text-gray-800 dark:text-white">Python Example:</h2>
-      <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-3 rounded overflow-x-auto text-[11px] mb-4">
+      <h2 className="text-base font-semibold mb-2 text-gray-800 dark:text-white">Python Example:</h2>
+      <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-4 rounded overflow-x-auto text-sm mb-4">
 {`value = int(input())
 print(value * 2)
 
@@ -71,8 +71,8 @@ d = float(input().strip())
 arr = list(map(float, input().split()))`}
       </pre>
 
-  <h2 className="text-sm font-semibold mb-1.5 text-gray-800 dark:text-white">Dart Example:</h2>
-  <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-3 rounded overflow-x-auto text-[11px] mb-4">
+  <h2 className="text-base font-semibold mb-2 text-gray-800 dark:text-white">Dart Example:</h2>
+  <pre className="bg-gray-900 dark:bg-gray-950 text-green-300 dark:text-green-400 p-4 rounded overflow-x-auto text-sm mb-4">
 {`import 'dart:io';
 
 void main() {

@@ -77,7 +77,7 @@ const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black bg-opacity-50"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -94,18 +94,18 @@ const Modal = ({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1 min-w-0">
               {title && (
                 <h2
                   id="modal-title"
-                  className="text-xl font-semibold text-gray-900 dark:text-white"
+                  className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white"
                 >
                   {title}
                 </h2>
               )}
               {headerActions && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {headerActions}
                 </div>
               )}
@@ -123,7 +123,7 @@ const Modal = ({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4">{children}</div>
+        <div className="flex-1 overflow-auto p-3 sm:p-4">{children}</div>
       </div>
     </div>
   );

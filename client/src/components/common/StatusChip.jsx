@@ -8,7 +8,7 @@ import React from 'react';
  */
 const StatusChip = ({ status, className = '' }) => {
   const getStatusConfig = () => {
-    const statusUpper = status?.toUpperCase();
+    const statusUpper = (status || '').toUpperCase();
     
     // Green for pass only
     if (statusUpper === 'PASS' || statusUpper === 'AC' || statusUpper === 'ACCEPTED') {
@@ -23,11 +23,12 @@ const StatusChip = ({ status, className = '' }) => {
     
     // Determine label for all other statuses
     let label = status || 'N/A';
-    if (statusUpper === 'WA' || statusUpper === 'WRONG_ANSWER') label = 'WA';
-    else if (statusUpper === 'TLE' || statusUpper === 'TIME_LIMIT') label = 'TLE';
-    else if (statusUpper === 'MLE' || statusUpper === 'MEMORY_LIMIT') label = 'MLE';
-    else if (statusUpper === 'CE' || statusUpper === 'COMPILE_ERROR') label = 'CE';
-    else if (statusUpper === 'RE' || statusUpper === 'RUNTIME_ERROR') label = 'RE';
+    if (statusUpper === 'WA' || statusUpper === 'WRONG_ANSWER' || statusUpper.includes('WRONG ANSWER')) label = 'WA';
+    else if (statusUpper === 'TLE' || statusUpper === 'TIME_LIMIT' || statusUpper.includes('TIME LIMIT')) label = 'TLE';
+    else if (statusUpper === 'MLE' || statusUpper === 'MEMORY_LIMIT' || statusUpper.includes('MEMORY LIMIT')) label = 'MLE';
+    else if (statusUpper === 'CE' || statusUpper === 'COMPILE_ERROR' || statusUpper.includes('COMPILE ERROR')) label = 'CE';
+    else if (statusUpper === 'RE' || statusUpper === 'RUNTIME_ERROR' || statusUpper.includes('RUNTIME ERROR')) label = 'RE';
+    else if (statusUpper === 'FAIL' || statusUpper.includes('FAILED')) label = 'FAIL';
     else if (statusUpper === 'PENDING') label = 'PENDING';
     else if (statusUpper === 'WAITING' || statusUpper === 'PENDING_CODE_REVIEW') label = 'Pending Code Review';
     else if (statusUpper === 'JUDGING') label = 'JUDGING';
@@ -58,7 +59,8 @@ const StatusChip = ({ status, className = '' }) => {
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}
+      title={status || ''}
+      className={`inline-flex items-center justify-center px-3 py-1 rounded-md text-sm font-medium max-w-full text-center break-words whitespace-normal leading-tight ${className}`}
       style={{
         backgroundColor: isDark ? config.bgDark : config.bgLight,
         color: isDark ? config.textDark : config.textLight

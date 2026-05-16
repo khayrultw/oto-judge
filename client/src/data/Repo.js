@@ -4,6 +4,7 @@ export const BASE_URL = "/api"
 
 const api = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
 });
 
 export const key = "Fkj6yhsdkjfhsj"
@@ -79,7 +80,10 @@ export const login = async (payload) => {
   return res;
 };
 export const getUser = () => api.get('/me');
-export const logout = () => api.get('/logout');
+export const logout = async () => {
+  localStorage.removeItem(key);
+  return api.get('/logout');
+};
 
 const Repo = {
   // Submissions

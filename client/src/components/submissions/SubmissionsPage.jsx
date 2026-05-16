@@ -9,7 +9,7 @@ import SkeletonList from '../common/SkeletonList';
 import ErrorState from '../common/ErrorState';
 import Modal from '../common/Modal';
 import CodeHighlight from '../common/CodeHighlight';
-import repo, { BASE_URL, key } from '../../data/Repo';
+import repo, { BASE_URL } from '../../data/Repo';
 
 function SubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -35,10 +35,9 @@ function SubmissionsPage() {
   };
 
   // Use SSE hook for live updates
-  const q = localStorage.getItem(key);
   const { data, connected, error: sseError } = useSSE(
-    `${BASE_URL}/submissions/sse/my?q=${q}`,
-    { enabled: !!q }
+    `${BASE_URL}/submissions/sse/my`,
+    { enabled: true }
   );
 
   const [submissions, setSubmissions] = useState([]);
@@ -215,20 +214,20 @@ function SubmissionsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-3 py-4 text-xs">
+    <div className="max-w-6xl mx-auto px-4 py-5 text-sm">
       <ConfirmDeleteDialog />
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <div>
           <h1 className="text-lg font-bold text-gray-900 dark:text-white">My Submissions</h1>
-          <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
             Track your submission history and results
           </p>
         </div>
         
         {/* Connection Status */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-sm">
           {connected && (
             <span className="flex items-center px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
               <span className="inline-block w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
@@ -247,13 +246,13 @@ function SubmissionsPage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-4">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status
             </label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-1 focus:ring-blue-500 outline-none"
             >
               <option value="">All</option>
               <option value="PASS">PASS</option>
@@ -267,13 +266,13 @@ function SubmissionsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Language
             </label>
             <select
               value={filters.language}
               onChange={(e) => setFilters({ ...filters, language: e.target.value })}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-1 focus:ring-blue-500 outline-none"
             >
               <option value="">All</option>
               {LANGUAGES.map((lang) => (
@@ -285,13 +284,13 @@ function SubmissionsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Problem
             </label>
             <select
               value={filters.problem}
               onChange={(e) => setFilters({ ...filters, problem: e.target.value })}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-1 focus:ring-blue-500 outline-none"
             >
               <option value="">All</option>
               {problems.map((prob) => (
@@ -303,13 +302,13 @@ function SubmissionsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Time
             </label>
             <select
               value={filters.timeRange}
               onChange={(e) => setFilters({ ...filters, timeRange: e.target.value })}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-1 focus:ring-blue-500 outline-none"
             >
               <option value="">All</option>
               <option value="1h">1h</option>
@@ -319,13 +318,13 @@ function SubmissionsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Sort
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-1 focus:ring-blue-500 outline-none"
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
@@ -339,7 +338,7 @@ function SubmissionsPage() {
       {loading && <SkeletonList rows={5} />}
       {!loading && sseError && <ErrorState message="Failed to load submissions." onRetry={handleRetry} />}
       {!loading && !sseError && filteredSubmissions.length === 0 && (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded text-xs">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded text-sm">
           No submissions found.
         </div>
       )}
@@ -349,34 +348,34 @@ function SubmissionsPage() {
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase">ID</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase">Problem</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase">Lang</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase">Status</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase">Time</th>
-                  <th className="px-2 py-2 text-right text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase">Action</th>
+                  <th className="px-3 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">ID</th>
+                  <th className="px-3 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Problem</th>
+                  <th className="px-3 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Lang</th>
+                  <th className="px-3 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Status</th>
+                  <th className="px-3 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Time</th>
+                  <th className="px-3 py-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredSubmissions.map((submission) => (
                   <tr key={submission.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 py-2 text-xs text-gray-500 dark:text-gray-400">
+                    <td className="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
                       #{submission.id}
                     </td>
-                    <td className="px-2 py-2">
-                      <span className="text-xs font-medium text-gray-900 dark:text-white">
+                    <td className="px-3 py-3">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {submission.problem_title}
                       </span>
                     </td>
-                    <td className="px-2 py-2">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                    <td className="px-3 py-3">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                         {getLanguageLabel(submission.language)}
                       </span>
                     </td>
-                    <td className="px-2 py-2">
+                    <td className="px-3 py-3">
                       <StatusChip status={submission.status} />
                     </td>
-                    <td className="px-2 py-2 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    <td className="px-3 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {new Date(submission.created_at || submission.submitted_time).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -408,14 +407,14 @@ function SubmissionsPage() {
                 <button
                   onClick={() => handleRejudge(selectedSubmission.id)}
                   disabled={actionLoading}
-                  className="px-2 py-1 text-[10px] bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
                   {actionLoading ? 'Processing...' : 'Rejudge'}
                 </button>
                 <button
                   onClick={() => handleDelete(selectedSubmission.id)}
                   disabled={actionLoading}
-                  className="px-2 py-1 text-[10px] bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
                   {actionLoading ? 'Processing...' : 'Delete'}
                 </button>
@@ -424,7 +423,7 @@ function SubmissionsPage() {
           }
         >
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-y-0.5 pb-1 border-b border-gray-200 dark:border-gray-700 text-xs">
+            <div className="flex flex-wrap items-center gap-y-1 pb-2 border-b border-gray-200 dark:border-gray-700 text-sm">
               <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
               <span className="mr-2"><StatusChip status={selectedSubmission.status} /></span>
               <span className="font-medium text-gray-700 dark:text-gray-300">Language:</span>
@@ -432,7 +431,7 @@ function SubmissionsPage() {
               <span className="font-medium text-gray-700 dark:text-gray-300">Problem:</span>
               <span className="text-gray-900 dark:text-white mr-2 truncate max-w-xs">{selectedSubmission.problem_title}</span>
               <span className="font-medium text-gray-700 dark:text-gray-300">Submitted:</span>
-              <span className="text-gray-900 dark:text-white text-[10px]">
+              <span className="text-gray-900 dark:text-white text-sm">
                 {new Date(selectedSubmission.created_at || selectedSubmission.submitted_time).toLocaleString()}
               </span>
             </div>
@@ -440,7 +439,7 @@ function SubmissionsPage() {
             {selectedSubmission.status !== 'PASS' && selectedSubmission.message && (
               <div>
                 <h3 className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">Logs</h3>
-                <div className="bg-gray-50 dark:bg-gray-900 p-2 rounded text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono text-xs">
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono text-sm">
                   {stripMarkdown(selectedSubmission.message)}
                 </div>
               </div>
@@ -448,7 +447,7 @@ function SubmissionsPage() {
 
             <div>
               <h3 className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">Code</h3>
-              <div className="text-[9px]">
+              <div className="text-sm">
                 <CodeHighlight
                   code={selectedSubmission.code || selectedSubmission.source_code}
                   language={selectedSubmission.language}
