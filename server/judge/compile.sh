@@ -49,11 +49,14 @@ if [[ $SRC_FILE == *.cpp ]]; then
     chmod +x "$COMPILED_CODE"
 
 elif [[ $SRC_FILE == *.py ]]; then
+    # Keep source in COMPILED_CODE so runtime can execute and diagnostics can show code.
     echo "$1" > "$COMPILED_CODE"
-    python3 -m py_compile "$COMPILED_CODE" 2>"$COMPILE_ERROR"
 
-    if [[ $? -ne 0 ]]; then 
-        cat "$COMPILE_ERROR" >&2 
+    # Validate Python syntax at compile stage for consistent error handling.
+    python3 -m py_compile "$SRC_FILE" 2>"$COMPILE_ERROR"
+
+    if [[ $? -ne 0 ]]; then
+        cat "$COMPILE_ERROR" >&2
         exit 1
     fi
 

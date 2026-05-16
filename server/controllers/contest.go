@@ -287,12 +287,7 @@ func (cc *ContestController) GetAllSubmissions(c *gin.Context) {
 		return
 	}
 
-	role := "user"
-	if isAdmin {
-		role = "admin"
-	}
-
-	result, err := cc.getAllSubmissionsPaginated(contestId, role, &req)
+	result, err := cc.getAllSubmissionsPaginated(contestId, isAdmin, &req)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve submissions"})
 		return
@@ -341,28 +336,35 @@ func (cc *ContestController) GetAllMySubmissionSSE(c *gin.Context) {
 		return
 	}
 
-	role := "user"
-	if isAdmin {
-		role = "admin"
-	}
-
 	flusher, ok := c.Writer.(http.Flusher)
 	if !ok {
 		http.Error(c.Writer, "Streaming unsupported", http.StatusInternalServerError)
 		return
 	}
 
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+	c.Writer.Header().Set("Cache-Control", "no-cache, no-transform")
 	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
 
 	client := utils.GetBroadcaster().Subscribe("contest_submissions")
-	defer close(client)
+	defer utils.GetBroadcaster().Unsubscribe("contest_submissions", client)
+
+	initialSubmissions, err := cc.getAllSubmissions(contestId, isAdmin)
+	if err == nil {
+		if jsonBytes, marshalErr := json.Marshal(initialSubmissions); marshalErr == nil {
+			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+		}
+	}
+
+	heartbeatTicker := time.NewTicker(25 * time.Second)
+	defer heartbeatTicker.Stop()
 
 	for {
 		select {
 		case <-client:
-			submissions, err := cc.getAllSubmissions(contestId, role)
+			submissions, err := cc.getAllSubmissions(contestId, isAdmin)
 			if err != nil {
 				continue
 			}
@@ -372,6 +374,10 @@ func (cc *ContestController) GetAllMySubmissionSSE(c *gin.Context) {
 			}
 
 			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+
+		case <-heartbeatTicker.C:
+			fmt.Fprint(c.Writer, ": ping\n\n")
 			flusher.Flush()
 
 		case <-c.Done():
@@ -390,12 +396,24 @@ func (cc *ContestController) GetMySubmissionsSSE(c *gin.Context) {
 		return
 	}
 
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+	c.Writer.Header().Set("Cache-Control", "no-cache, no-transform")
 	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
 
 	client := utils.GetBroadcaster().Subscribe("my_contest_submissions")
-	defer close(client)
+	defer utils.GetBroadcaster().Unsubscribe("my_contest_submissions", client)
+
+	initialSubmissions, err := cc.getMySubmissions(userId, contestId)
+	if err == nil {
+		if jsonBytes, marshalErr := json.Marshal(initialSubmissions); marshalErr == nil {
+			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+		}
+	}
+
+	heartbeatTicker := time.NewTicker(25 * time.Second)
+	defer heartbeatTicker.Stop()
 
 	for {
 		select {
@@ -410,6 +428,10 @@ func (cc *ContestController) GetMySubmissionsSSE(c *gin.Context) {
 			}
 
 			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+
+		case <-heartbeatTicker.C:
+			fmt.Fprint(c.Writer, ": ping\n\n")
 			flusher.Flush()
 
 		case <-c.Done():
@@ -456,8 +478,7 @@ func (sc *ContestController) getMySubmissions(userId uint, contestId string) ([]
 	return response, nil
 }
 
-func (sc *ContestController) getAllSubmissions(contestId, role string) ([]models.SubmissionWithProblem, error) {
-	fmt.Printf("Role: %s\n", role)
+func (sc *ContestController) getAllSubmissions(contestId string, isAdmin bool) ([]models.SubmissionWithProblem, error) {
 	type Result struct {
 		models.Submission
 		UserName     string
@@ -466,7 +487,7 @@ func (sc *ContestController) getAllSubmissions(contestId, role string) ([]models
 
 	var results []Result
 	selectCols := "submissions.id, submissions.user_id, submissions.problem_id, submissions.contest_id, submissions.language, submissions.status, submissions.message, submissions.created_at, users.name as user_name, problems.title as problem_title"
-	if role == "admin" {
+	if isAdmin {
 		selectCols = "submissions.*, users.name as user_name, problems.title as problem_title"
 	}
 	query := sc.Db.Table("submissions").
@@ -484,7 +505,7 @@ func (sc *ContestController) getAllSubmissions(contestId, role string) ([]models
 	var response []models.SubmissionWithProblem
 	for _, r := range results {
 		sourceCode := "Not Available"
-		if role == "admin" {
+		if isAdmin {
 			sourceCode = r.SourceCode
 		}
 		response = append(response, models.SubmissionWithProblem{
@@ -504,7 +525,7 @@ func (sc *ContestController) getAllSubmissions(contestId, role string) ([]models
 	return response, nil
 }
 
-func (sc *ContestController) getAllSubmissionsPaginated(contestId, role string, req *models.ContestSubmissionsRequest) (models.PaginatedResponse, error) {
+func (sc *ContestController) getAllSubmissionsPaginated(contestId string, isAdmin bool, req *models.ContestSubmissionsRequest) (models.PaginatedResponse, error) {
 	type Result struct {
 		models.Submission
 		UserName     string
@@ -512,7 +533,7 @@ func (sc *ContestController) getAllSubmissionsPaginated(contestId, role string, 
 	}
 
 	selectCols := "submissions.id, submissions.user_id, submissions.problem_id, submissions.contest_id, submissions.language, submissions.status, submissions.message, submissions.created_at, users.name as user_name, problems.title as problem_title"
-	if role == "admin" {
+	if isAdmin {
 		selectCols = "submissions.*, users.name as user_name, problems.title as problem_title"
 	}
 	query := sc.Db.Table("submissions").
@@ -547,7 +568,7 @@ func (sc *ContestController) getAllSubmissionsPaginated(contestId, role string, 
 	var response []models.SubmissionWithProblem
 	for _, r := range results {
 		sourceCode := "Not Available"
-		if role == "admin" {
+		if isAdmin {
 			sourceCode = r.SourceCode
 		}
 		response = append(response, models.SubmissionWithProblem{
@@ -724,7 +745,7 @@ func sortAndRankStandings(standings []models.UserStanding) {
 	})
 	currentRank := 1
 	for i := range standings {
-		if i > 0 && standings[i].Solved == standings[i-1].Solved && standings[i].Penalty == standings[i-1].Penalty {
+		if i > 0 && standings[i].Solved == standings[i-1].Solved {
 			standings[i].Rank = standings[i-1].Rank
 		} else {
 			standings[i].Rank = currentRank
@@ -742,12 +763,24 @@ func (cc *ContestController) SSEStandings(c *gin.Context) {
 		return
 	}
 
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+	c.Writer.Header().Set("Cache-Control", "no-cache, no-transform")
 	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
 
 	client := utils.GetBroadcaster().Subscribe("standings")
-	defer close(client)
+	defer utils.GetBroadcaster().Unsubscribe("standings", client)
+
+	initialStandings, err := cc.getStandings(contestId)
+	if err == nil {
+		if jsonBytes, marshalErr := json.Marshal(initialStandings); marshalErr == nil {
+			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+		}
+	}
+
+	heartbeatTicker := time.NewTicker(25 * time.Second)
+	defer heartbeatTicker.Stop()
 
 	for {
 		select {
@@ -762,6 +795,10 @@ func (cc *ContestController) SSEStandings(c *gin.Context) {
 			}
 
 			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+
+		case <-heartbeatTicker.C:
+			fmt.Fprint(c.Writer, ": ping\n\n")
 			flusher.Flush()
 
 		case <-c.Done():

@@ -158,6 +158,8 @@ func (authController *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	setAuthCookie(c, token)
+
 	c.JSON(http.StatusOK, models.LoginResponse{
 		ID:    user.Id,
 		Name:  user.Name,
@@ -190,6 +192,7 @@ func createJWT(userId uint, role string) (string, error) {
 }
 
 func (authController *AuthController) Logout(c *gin.Context) {
+	clearAuthCookie(c)
 	c.JSON(http.StatusOK, gin.H{"msg": "Logout (client should discard token)"})
 }
 
@@ -221,4 +224,16 @@ func (authController *AuthController) GetUser(c *gin.Context) {
 		Email: user.Email,
 		Role:  role,
 	})
+}
+
+func setAuthCookie(c *gin.Context, token string) {
+	isSecure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("auth_token", token, int((24 * time.Hour).Seconds()), "/", "", isSecure, true)
+}
+
+func clearAuthCookie(c *gin.Context) {
+	isSecure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("auth_token", "", -1, "/", "", isSecure, true)
 }

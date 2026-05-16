@@ -9,7 +9,7 @@ import (
 func RegisterContestRoutes(rg *gin.RouterGroup) {
 	contestController := controllers.NewContestController()
 
-	// SSE endpoints (require token in query)
+	// SSE endpoints share the same auth middleware and can use the auth cookie.
 	rg.GET("/standings/sse/:contestId", middleware.RequireTokenInQuery, contestController.SSEStandings)
 	rg.GET("/:contestId/sse", middleware.RequireTokenInQuery, contestController.GetAllMySubmissionSSE)
 	rg.GET("/:contestId/sse/my", middleware.RequireTokenInQuery, contestController.GetMySubmissionsSSE)

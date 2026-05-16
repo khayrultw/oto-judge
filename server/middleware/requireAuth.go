@@ -3,40 +3,57 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/khayrultw/go-judge/config"
 )
 
+const authCookieName = "auth_token"
+
 func RequireAuth(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" || len(authHeader) < 8 || authHeader[:7] != "Bearer " {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing or invalid"})
+	requireClaims(c, tokenFromHeaderOrCookie(c), "Authorization header or auth cookie missing or invalid")
+}
+
+func RequireTokenInQuery(c *gin.Context) {
+	tokenStr := c.Query("q")
+	if tokenStr == "" {
+		tokenStr = tokenFromHeaderOrCookie(c)
+	}
+	requireClaims(c, tokenStr, "Token is required")
+}
+
+func requireClaims(c *gin.Context, tokenStr string, missingMessage string) {
+	if tokenStr == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": missingMessage})
 		return
 	}
-	tokenStr := authHeader[7:]
-	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-		_, ok := t.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			return nil, fmt.Errorf("unexpected signing method")
-		}
-		return []byte(config.GetConfig().JWTSecret), nil
-	})
-	if err != nil || !token.Valid {
+
+	claims, err := parseTokenClaims(tokenStr)
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		return
 	}
-	claims, ok := token.Claims.(jwt.MapClaims)
+
+	userIDValue, ok := claims["user_id"]
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 		return
 	}
+	userIDFloat, ok := userIDValue.(float64)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		return
+	}
+	role, ok := claims["role"].(string)
+	if !ok || role == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		return
+	}
 
-	c.Set("userId", uint(claims["user_id"].(float64)))
-	c.Set("role", claims["role"].(string))
-
-	// Extract isAdmin from JWT claims (graceful fallback for old tokens without this claim)
+	c.Set("userId", uint(userIDFloat))
+	c.Set("role", role)
 	if isAdmin, ok := claims["is_admin"].(bool); ok {
 		c.Set("isAdmin", isAdmin)
 	}
@@ -44,13 +61,9 @@ func RequireAuth(c *gin.Context) {
 	c.Next()
 }
 
-func RequireTokenInQuery(c *gin.Context) {
-	tokenStr := c.Query("q")
-	if tokenStr == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token is required"})
-		return
-	}
-	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+func parseTokenClaims(tokenStr string) (jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
 			return nil, fmt.Errorf("unexpected signing method")
@@ -58,20 +71,18 @@ func RequireTokenInQuery(c *gin.Context) {
 		return []byte(config.GetConfig().JWTSecret), nil
 	})
 	if err != nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		return
+		return nil, fmt.Errorf("invalid token")
 	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
-		return
-	}
-	c.Set("userId", uint(claims["user_id"].(float64)))
-	c.Set("role", claims["role"].(string))
+	return claims, nil
+}
 
-	if isAdmin, ok := claims["is_admin"].(bool); ok {
-		c.Set("isAdmin", isAdmin)
+func tokenFromHeaderOrCookie(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		return strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
 	}
-
-	c.Next()
+	if tokenStr, err := c.Cookie(authCookieName); err == nil {
+		return tokenStr
+	}
+	return ""
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"path/filepath"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/khayrultw/go-judge/config"
@@ -19,16 +21,15 @@ func main() {
 		return
 	}
 
-	r.Use(middleware.RateLimiter(20, 10))
+	publicDir := config.GetConfig().PublicDir
 
-	api := r.Group("/api")
+	api := r.Group("/api", middleware.RateLimiter(10, 10))
 	{
 		routes.RegisterAllRoutes(api)
 	}
-	routes.RegisterClientRoutes(r)
+	routes.RegisterClientRoutes(r, publicDir)
 
-	r.Static("/store", "./store")
-	r.Static("/assets", "../client/dist/assets")
+	r.Static("/assets", filepath.Join(publicDir, "assets"))
 
-	r.Run("0.0.0.0:8080")
+	r.Run("0.0.0.0:" + config.GetConfig().AppPort)
 }

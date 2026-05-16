@@ -1,25 +1,37 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+	"os"
+	"path/filepath"
 
-func RegisterClientRoutes(r *gin.Engine) {
-	r.GET("/manifest.json", func(c *gin.Context) {
-		c.File("../client/dist/manifest.json")
-	})
-	r.GET("/favicon.ico", func(c *gin.Context) {
-		c.File("../client/dist/favicon.ico")
-	})
-	r.GET("/robots.txt", func(c *gin.Context) {
-		c.File("../client/dist/robots.txt")
-	})
-	r.GET("/logo192.png", func(c *gin.Context) {
-		c.File("../client/dist/logo192.png")
-	})
-	r.GET("/logo512.png", func(c *gin.Context) {
-		c.File("../client/dist/logo512.png")
-	})
+	"github.com/gin-gonic/gin"
+)
+
+func RegisterClientRoutes(r *gin.Engine, publicDir string) {
+	r.GET("/manifest.json", serveClientFile(publicDir, "manifest.json"))
+	r.GET("/favicon.ico", serveClientFile(publicDir, "favicon.ico"))
+	r.GET("/robots.txt", serveClientFile(publicDir, "robots.txt"))
+	r.GET("/logo192.png", serveClientFile(publicDir, "logo192.png"))
+	r.GET("/logo512.png", serveClientFile(publicDir, "logo512.png"))
 
 	r.NoRoute(func(c *gin.Context) {
-		c.File("../client/dist/index.html")
+		indexPath := filepath.Join(publicDir, "index.html")
+		if _, err := os.Stat(indexPath); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.File(indexPath)
 	})
+}
+
+func serveClientFile(publicDir, name string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		assetPath := filepath.Join(publicDir, name)
+		if _, err := os.Stat(assetPath); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.File(assetPath)
+	}
 }

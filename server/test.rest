@@ -17,8 +17,8 @@ Content-Type: application/json
 
 {
     "name": "Test User",
-    "email": "user@test.com",
-    "password": "password123"
+    "email": "khayrul@forward.edu.my",
+    "password": "WSXwsx123!"
 }
 
 ###
@@ -453,22 +453,26 @@ Authorization: Bearer {{userToken}}
 ### ========================================
 
 ### Contest submissions SSE (admin only during contest)
-GET {{baseUrl}}/api/contests/{{contestId}}/sse?q={{adminToken}}
+GET {{baseUrl}}/api/contests/{{contestId}}/sse
+Authorization: Bearer {{adminToken}}
 
 ###
 
 ### My contest submissions SSE
-GET {{baseUrl}}/api/contests/{{contestId}}/sse/my?q={{userToken}}
+GET {{baseUrl}}/api/contests/{{contestId}}/sse/my
+Authorization: Bearer {{userToken}}
 
 ###
 
 ### Standings SSE
-GET {{baseUrl}}/api/contests/standings/sse/{{contestId}}?q={{userToken}}
+GET {{baseUrl}}/api/contests/standings/sse/{{contestId}}
+Authorization: Bearer {{userToken}}
 
 ###
 
 ### My submissions SSE
-GET {{baseUrl}}/api/submissions/sse/my?q={{userToken}}
+GET {{baseUrl}}/api/submissions/sse/my
+Authorization: Bearer {{userToken}}
 
 ###
 

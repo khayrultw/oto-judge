@@ -15,14 +15,15 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	JWTSecret  string
+	AppPort    string
+	PublicDir  string
 }
 
 var envConfig Config
 
 func LoadConfig() error {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Make sure you have a .env file in the root directory")
+	if err := godotenv.Load(); err != nil {
+		log.Print(".env file not found, using process environment")
 	}
 
 	envConfig = Config{
@@ -32,17 +33,25 @@ func LoadConfig() error {
 		DBPassword: os.Getenv("DB_PASS"),
 		DBName:     os.Getenv("DB_NAME"),
 		JWTSecret:  os.Getenv("JWT_SECRET"),
+		AppPort:    getEnvOrDefault("APP_PORT", "8080"),
+		PublicDir:  getEnvOrDefault("PUBLIC_DIR", "./public"),
 	}
 
-	fmt.Printf("Config Loaded: %+v\n", envConfig)
-
-	if envConfig.DBHost == "" || envConfig.DBPort == "" || envConfig.DBUser == "" || envConfig.DBPassword == "" || envConfig.DBName == "" {
+	if envConfig.DBHost == "" || envConfig.DBPort == "" || envConfig.DBUser == "" || envConfig.DBPassword == "" || envConfig.DBName == "" || envConfig.JWTSecret == "" {
 		log.Fatal("Missing required environment variables. Please check your .env file.")
-		return err
+		return fmt.Errorf("missing required environment variables")
 	}
 	return nil
 }
 
 func GetConfig() Config {
 	return envConfig
+}
+
+func getEnvOrDefault(key, fallback string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	return value
 }

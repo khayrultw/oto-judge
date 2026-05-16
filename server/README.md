@@ -104,7 +104,7 @@ Admins can perform full CRUD operations on users:
 
 ### SSE (Server-Sent Events)
 
-SSE endpoints use token in query parameter (`?q=<token>`):
+SSE endpoints use the same JWT auth as the rest of the API. Browser clients rely on the HttpOnly auth cookie set during login, and non-browser clients can send the usual `Authorization: Bearer <token>` header:
 
 - `/api/contests/:contestId/sse` - All contest submissions (admin only during contest)
 - `/api/contests/:contestId/sse/my` - User's own contest submissions

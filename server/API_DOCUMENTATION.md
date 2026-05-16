@@ -57,13 +57,13 @@ All timestamps use **RFC3339** format: `"2025-12-28T15:04:05Z"`
 Authorization: Bearer <jwt_token>
 ```
 
-### Query Parameter Authentication (SSE Endpoints)
+### Cookie or Header Authentication (SSE Endpoints)
 
 ```
-?q=<jwt_token>
+Authorization: Bearer <jwt_token>
 ```
 
-JWT tokens are obtained via the `/api/login` endpoint and expire after 24 hours.
+Browser clients can also rely on the HttpOnly auth cookie set by `/api/login`. JWT tokens expire after 24 hours.
 
 ---
 
@@ -1127,12 +1127,13 @@ GET /api/submissions/my
 
 ## Server-Sent Events (SSE)
 
-All SSE endpoints use query parameter authentication: `?q=<jwt>`
+All SSE endpoints use the standard JWT auth flow. Browser clients use the HttpOnly auth cookie, and non-browser clients may send `Authorization: Bearer <jwt>`.
 
 ### Standings Stream
 
 ```
-GET /api/contests/standings/sse/:contestId?q=<jwt>
+GET /api/contests/standings/sse/:contestId
+Authorization: Bearer <jwt>
 ```
 
 **Event Format:**
@@ -1147,7 +1148,8 @@ data: [{"rank":1,"user_id":123,...}]
 ### All Contest Submissions Stream
 
 ```
-GET /api/contests/:contestId/sse?q=<jwt>
+GET /api/contests/:contestId/sse
+Authorization: Bearer <jwt>
 ```
 
 **Access Control:** Admin only during ongoing contest
@@ -1157,7 +1159,8 @@ GET /api/contests/:contestId/sse?q=<jwt>
 ### My Contest Submissions Stream
 
 ```
-GET /api/contests/:contestId/sse/my?q=<jwt>
+GET /api/contests/:contestId/sse/my
+Authorization: Bearer <jwt>
 ```
 
 ---
@@ -1165,7 +1168,8 @@ GET /api/contests/:contestId/sse/my?q=<jwt>
 ### My Submissions Stream (Global)
 
 ```
-GET /api/submissions/sse/my?q=<jwt>
+GET /api/submissions/sse/my
+Authorization: Bearer <jwt>
 ```
 
 ---

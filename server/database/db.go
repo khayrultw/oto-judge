@@ -24,6 +24,10 @@ func InitDb() error {
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Printf("Failed to connect to database: %v", err)
+		return err
+	}
 
 	db.AutoMigrate(
 		&models.User{},
@@ -35,11 +39,6 @@ func InitDb() error {
 	createIndexes(db)
 
 	fmt.Printf("Database Connected")
-
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-		return err
-	}
 	Db = db
 	return nil
 }

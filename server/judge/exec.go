@@ -13,6 +13,11 @@ import (
 	"github.com/khayrultw/go-judge/models"
 )
 
+const (
+	defaultTimeLimitSeconds = 2.0
+	maxMemoryLimitMB        = 256
+)
+
 // ParseTestCases parses a testcase file supporting both:
 // 1. Wrapper object: {"test_cases": [...], "time_limit": 5, "memory_limit": 256}
 // 2. Flat array: [{"input": "...", "output": "..."}]
@@ -80,13 +85,19 @@ func JudgeCode(sourceCode string, testCaseFilePath string, lang string) models.R
 		return models.Result{Status: "ERROR", Message: "Invalid test case format"}
 	}
 
-	// Build run.sh args with optional time/memory limits from metadata
-	runArgs := []string{result.FilePath, "" /* placeholder for inputFilePath */, lang}
+	effectiveTimeLimit := defaultTimeLimitSeconds
 	if tcFile.TimeLimit > 0 {
-		runArgs = append(runArgs, strconv.FormatFloat(tcFile.TimeLimit, 'f', -1, 64))
-		if tcFile.MemoryLimit > 0 {
-			runArgs = append(runArgs, strconv.Itoa(tcFile.MemoryLimit))
-		}
+		effectiveTimeLimit = tcFile.TimeLimit
+	}
+	effectiveMemoryLimit := normalizeMemoryLimit(tcFile.MemoryLimit)
+
+	// Build run.sh args with a hard memory cap to prevent testcase metadata from raising it.
+	runArgs := []string{
+		result.FilePath,
+		"", // placeholder for inputFilePath
+		lang,
+		strconv.FormatFloat(effectiveTimeLimit, 'f', -1, 64),
+		strconv.Itoa(effectiveMemoryLimit),
 	}
 
 	for idx, tc := range tcFile.TestCases {
@@ -228,6 +239,7 @@ func RunCustomTest(sourceCode, lang, input, expectedOutput string) models.TestRu
 	}
 
 	cmd := exec.Command("judge/run.sh", result.FilePath, inputFilePath, lang)
+	cmd.Args = []string{"judge/run.sh", result.FilePath, inputFilePath, lang, strconv.FormatFloat(defaultTimeLimitSeconds, 'f', -1, 64), strconv.Itoa(maxMemoryLimitMB)}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -272,4 +284,14 @@ func RunCustomTest(sourceCode, lang, input, expectedOutput string) models.TestRu
 		Message: "Code executed successfully",
 		Passed:  true,
 	}
+}
+
+func normalizeMemoryLimit(memoryLimit int) int {
+	if memoryLimit <= 0 {
+		return maxMemoryLimitMB
+	}
+	if memoryLimit > maxMemoryLimitMB {
+		return maxMemoryLimitMB
+	}
+	return memoryLimit
 }

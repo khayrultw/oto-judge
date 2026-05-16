@@ -33,12 +33,24 @@ func (sc *SubmissionController) SSEMySubmissions(c *gin.Context) {
 		return
 	}
 
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+	c.Writer.Header().Set("Cache-Control", "no-cache, no-transform")
 	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
 
 	client := utils.GetBroadcaster().Subscribe("mysubmissions")
-	defer close(client)
+	defer utils.GetBroadcaster().Unsubscribe("mysubmissions", client)
+
+	initialSubmissions, err := sc.GetSubsByUser(c.GetUint("userId"))
+	if err == nil {
+		if jsonBytes, marshalErr := json.Marshal(initialSubmissions); marshalErr == nil {
+			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+		}
+	}
+
+	heartbeatTicker := time.NewTicker(25 * time.Second)
+	defer heartbeatTicker.Stop()
 
 	for {
 		select {
@@ -53,6 +65,10 @@ func (sc *SubmissionController) SSEMySubmissions(c *gin.Context) {
 			}
 
 			fmt.Fprintf(c.Writer, "data: %s\n\n", jsonBytes)
+			flusher.Flush()
+
+		case <-heartbeatTicker.C:
+			fmt.Fprint(c.Writer, ": ping\n\n")
 			flusher.Flush()
 
 		case <-c.Done():
