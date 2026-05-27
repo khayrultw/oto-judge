@@ -46,12 +46,29 @@ type UpdateUserPasswordRequest struct {
 	Password string `json:"password" binding:"required,min=5,max=100"`
 }
 
+type RequestResetRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=5,max=100"`
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=5,max=100"`
+}
+
 type UserListResponse struct {
-	ID        uint       `json:"id"`
-	Name      string     `json:"name"`
-	Email     string     `json:"email"`
-	IsAdmin   bool       `json:"is_admin"`
-	CreatedAt CustomTime `json:"created_at"`
+	ID            uint       `json:"id"`
+	Name          string     `json:"name"`
+	Email         string     `json:"email"`
+	IsAdmin       bool       `json:"is_admin"`
+	CreatedAt     CustomTime `json:"created_at"`
+	DeletedAt     *string    `json:"deleted_at,omitempty"`
+	SolvedCount   int        `json:"solved_count"`
+	TotalProblems int        `json:"total_problems"`
 }
 
 // Contest DTOs
@@ -128,12 +145,13 @@ type TestRunResponse struct {
 }
 
 type SubmissionListRequest struct {
-	ContestID uint   `form:"contest_id"`
-	UserID    uint   `form:"user_id"`
-	Status    string `form:"status"`
-	Language  string `form:"language"`
-	StartDate string `form:"start_date"`
-	EndDate   string `form:"end_date"`
+	ContestID   uint   `form:"contest_id"`
+	UserID      uint   `form:"user_id"`
+	Status      string `form:"status"`
+	Language    string `form:"language"`
+	StartDate   string `form:"start_date"`
+	EndDate     string `form:"end_date"`
+	DeletedOnly bool   `form:"deleted_only"`
 	Page      int    `form:"page"`
 	PageSize  int    `form:"page_size"`
 }
@@ -220,6 +238,7 @@ type UserSearchRequest struct {
 	PaginationRequest
 	Query          string `form:"q"`
 	IncludeDeleted bool   `form:"include_deleted"`
+	DeletedOnly    bool   `form:"deleted_only"`
 	IsAdmin        string `form:"is_admin"`
 }
 

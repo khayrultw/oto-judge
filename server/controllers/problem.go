@@ -116,7 +116,6 @@ func (pc *ProblemController) UpdateProblem(c *gin.Context) {
 		return
 	}
 
-	// Check if using JSON body (with testcase_text) or form data
 	contentType := c.GetHeader("Content-Type")
 	if contentType == "application/json" || contentType == "application/json; charset=utf-8" {
 		var req models.UpdateProblemRequest
@@ -137,7 +136,6 @@ func (pc *ProblemController) UpdateProblem(c *gin.Context) {
 			problem.Statement = req.Statement
 		}
 		if req.TestcaseText != "" {
-			// Replace testcase file content
 			if err := os.WriteFile(problem.TestCasePath, []byte(req.TestcaseText), 0644); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update testcase file"})
 				return

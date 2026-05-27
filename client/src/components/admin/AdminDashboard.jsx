@@ -8,6 +8,7 @@ import {
   ArrowTrendingUpIcon,
   ShieldCheckIcon,
   TrashIcon,
+  KeyIcon,
 } from '@heroicons/react/24/outline';
 import repo from '../../data/Repo';
 import { notify } from '../../utils/feedback';
@@ -130,6 +131,22 @@ const AdminDashboard = () => {
             <ClipboardDocumentListIcon className="h-10 w-10 mx-auto text-green-500 mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">All Submissions</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">View and rejudge submissions</p>
+          </Link>
+          <Link 
+            to="/admin/reset-tokens"
+            className="text-center p-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+          >
+            <KeyIcon className="h-10 w-10 mx-auto text-orange-500 mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Reset Requests</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Share password reset tokens</p>
+          </Link>
+          <Link 
+            to="/admin/trash"
+            className="text-center p-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+          >
+            <TrashIcon className="h-10 w-10 mx-auto text-red-500 mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Trash</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Restore or permanently remove deleted items</p>
           </Link>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import repo from '../../data/Repo';
+import AIPolicyBanner from '../common/AIPolicyBanner';
 
 function HomePage() {
   const [upcomingContests, setUpcomingContests] = useState([]);
@@ -85,9 +86,7 @@ function HomePage() {
   return (
     <div className="p-3 max-w-5xl mx-auto text-sm">
       <h1 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Contests</h1>
-      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100">
-        Use of generative AI tools (ChatGPT, Claude, DeepSeek, etc.) is strictly prohibited. You may only browse programming language documentation.
-      </div>
+      <AIPolicyBanner className="mb-4" />
       {error && (
         <div className="text-red-500 dark:text-red-400 text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">{error}</div>
       )}

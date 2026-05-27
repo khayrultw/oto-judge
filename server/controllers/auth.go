@@ -48,7 +48,6 @@ func (authController *AuthController) Update(c *gin.Context) {
 		return
 	}
 
-	// Update fields if provided
 	if req.Name != "" {
 		user.Name = req.Name
 	}
@@ -82,7 +81,6 @@ func (authController *AuthController) Register(c *gin.Context) {
 		return
 	}
 
-	// Check if email already exists
 	var existingUser models.User
 	if err := authController.Db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
 		c.AbortWithStatusJSON(http.StatusConflict, models.ErrorResponse{
@@ -112,7 +110,6 @@ func (authController *AuthController) Register(c *gin.Context) {
 	})
 }
 
-// --- Replace Login to return token in JSON, not set cookie ---
 func (authController *AuthController) Login(c *gin.Context) {
 	var req models.LoginRequest
 

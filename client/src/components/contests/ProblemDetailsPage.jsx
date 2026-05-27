@@ -15,19 +15,16 @@ function ProblemDetailsPage() {
   const navigate = useNavigate();
   const { resolvedTheme } = useTheme();
   
-  // Problem states
   const [problem, setProblem] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // Code editor states
   const [language, setLanguage] = useState('');
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const initialLoadRef = useRef(true);
   
-  // Test run states
   const [testInput, setTestInput] = useState('');
   const [testRunning, setTestRunning] = useState(false);
   const [testResultModalOpen, setTestResultModalOpen] = useState(false);
@@ -38,7 +35,6 @@ function ProblemDetailsPage() {
   const effectiveProblemId = problemId || id;
   const effectiveContestId = contestId || problem?.contest_id;
 
-  // Fetch problem
   useEffect(() => {
     const fetchProblem = async () => {
       try {
@@ -61,7 +57,6 @@ function ProblemDetailsPage() {
     }
   }, [effectiveProblemId]);
 
-  // Load saved language and draft code
   useEffect(() => {
     if (!effectiveProblemId || !problem || Object.keys(problem).length === 0) return;
 
@@ -69,13 +64,14 @@ function ProblemDetailsPage() {
     setLanguage(savedLang);
 
     const draftKey = `submitDraft:${effectiveProblemId}:${savedLang}`;
-    const savedCode = localStorage.getItem(draftKey) || '';
+    const lastSubmittedKey = `lastSubmitted:${effectiveProblemId}:${savedLang}`;
+    // Prefer in-progress draft; fall back to last submitted code
+    const savedCode = localStorage.getItem(draftKey) || localStorage.getItem(lastSubmittedKey) || '';
     setCode(savedCode);
 
     initialLoadRef.current = false;
   }, [effectiveProblemId, problem]);
 
-  // Save draft when code changes
   useEffect(() => {
     if (!effectiveProblemId || !language || initialLoadRef.current) return;
 
@@ -84,7 +80,6 @@ function ProblemDetailsPage() {
     setHasUnsavedChanges(code.trim().length > 0);
   }, [code, effectiveProblemId, language]);
 
-  // Handle language change
   const handleLanguageChange = (event) => {
     const newLang = event.target.value;
     
@@ -96,13 +91,13 @@ function ProblemDetailsPage() {
     localStorage.setItem(`lastLang:${effectiveProblemId}`, newLang);
 
     const draftKey = `submitDraft:${effectiveProblemId}:${newLang}`;
-    const savedCode = localStorage.getItem(draftKey) || '';
+    const lastSubmittedKey = `lastSubmitted:${effectiveProblemId}:${newLang}`;
+    const savedCode = localStorage.getItem(draftKey) || localStorage.getItem(lastSubmittedKey) || '';
     
     setLanguage(newLang);
     setCode(savedCode);
   };
 
-  // Warn before leaving with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (hasUnsavedChanges) {
@@ -153,6 +148,9 @@ function ProblemDetailsPage() {
       });
 
       const draftKey = `submitDraft:${effectiveProblemId}:${language}`;
+      const lastSubmittedKey = `lastSubmitted:${effectiveProblemId}:${language}`;
+      // Preserve submitted code so editor can restore it on revisit
+      localStorage.setItem(lastSubmittedKey, code);
       localStorage.removeItem(draftKey);
       setHasUnsavedChanges(false);
 
@@ -167,10 +165,13 @@ function ProblemDetailsPage() {
     }
   };
 
-  // Handle test run
   const handleTestRun = async () => {
     if (!language || !code.trim()) {
       notify.error('Please select a language and enter your code');
+      return;
+    }
+    if (!testInput.trim()) {
+      notify.error('Please provide custom input before running a test.');
       return;
     }
     if (actionCooldownLeft > 0) return;
@@ -195,7 +196,6 @@ function ProblemDetailsPage() {
     }
   };
 
-  // Handle Ctrl/Cmd+Enter to submit
   const handleKeyDown = useCallback(
     (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -210,9 +210,9 @@ function ProblemDetailsPage() {
 
   const handleBack = () => {
     if (effectiveContestId) {
-      navigate(`/viewcontest/${effectiveContestId}`);
+      navigate(`/viewcontest/${effectiveContestId}`, { replace: true });
     } else {
-      navigate('/');
+      navigate('/', { replace: true });
     }
   };
 

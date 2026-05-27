@@ -26,4 +26,5 @@ type SubmissionWithProblem struct {
 	Status       string     `json:"status"`
 	Message      string     `json:"message"`
 	CreatedAt    CustomTime `json:"created_at"`
+	DeletedAt    *string    `json:"deleted_at,omitempty"`
 }

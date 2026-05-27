@@ -34,6 +34,7 @@ func InitDb() error {
 		&models.Contest{},
 		&models.Problem{},
 		&models.Submission{},
+		&models.PasswordResetToken{},
 	)
 
 	createIndexes(db)

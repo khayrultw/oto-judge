@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/khayrultw/go-judge/database"
@@ -19,6 +20,54 @@ type UserController struct {
 func NewUserController() *UserController {
 	db := database.Db
 	return &UserController{Db: db}
+}
+
+// batchSolvedCounts returns a map[userID]→solvedCount for the given user IDs.
+// "Solved" means at least one PASS submission for that problem (mirrors standings logic).
+func batchSolvedCounts(db *gorm.DB, userIDs []uint) map[uint]int {
+	if len(userIDs) == 0 {
+		return map[uint]int{}
+	}
+	type row struct {
+		UserID      uint
+		SolvedCount int
+	}
+	var rows []row
+	db.Table("submissions").
+		Select("user_id, COUNT(DISTINCT problem_id) AS solved_count").
+		Where("user_id IN ? AND status = 'PASS' AND deleted_at IS NULL", userIDs).
+		Group("user_id").
+		Scan(&rows)
+	result := make(map[uint]int, len(rows))
+	for _, r := range rows {
+		result[r.UserID] = r.SolvedCount
+	}
+	return result
+}
+
+// totalActiveProblems returns the count of all active (non-deleted) problems.
+func totalActiveProblems(db *gorm.DB) int {
+	var count int64
+	db.Model(&models.Problem{}).Count(&count)
+	return int(count)
+}
+
+// toUserListResponse converts a User model to the API response DTO.
+func toUserListResponse(user models.User, solved int, totalProblems int) models.UserListResponse {
+	resp := models.UserListResponse{
+		ID:            user.Id,
+		Name:          user.Name,
+		Email:         user.Email,
+		IsAdmin:       user.IsAdmin,
+		CreatedAt:     user.CreatedAt,
+		SolvedCount:   solved,
+		TotalProblems: totalProblems,
+	}
+	if user.DeletedAt.Valid {
+		t := user.DeletedAt.Time.Format(time.RFC3339)
+		resp.DeletedAt = &t
+	}
+	return resp
 }
 
 // CreateUser creates a new user (admin only)
@@ -70,13 +119,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	adminId, _ := c.Get("userId")
 	log.Printf("Admin %v created user %d (%s)", adminId, user.Id, user.Email)
 
-	c.JSON(http.StatusCreated, models.UserListResponse{
-		ID:        user.Id,
-		Name:      user.Name,
-		Email:     user.Email,
-		IsAdmin:   user.IsAdmin,
-		CreatedAt: user.CreatedAt,
-	})
+	c.JSON(http.StatusCreated, toUserListResponse(user, 0, totalActiveProblems(uc.Db)))
 }
 
 // ListUsers lists all users with optional pagination (admin only)
@@ -84,12 +127,20 @@ func (uc *UserController) ListUsers(c *gin.Context) {
 	page := c.DefaultQuery("page", "1")
 	pageSize := c.DefaultQuery("page_size", "50")
 	includeDeleted := c.Query("include_deleted") == "true"
+	deletedOnly := c.Query("deleted_only") == "true"
 
 	var users []models.User
 	query := uc.Db
 
-	if includeDeleted {
+	switch {
+	case deletedOnly:
+		// Show only soft-deleted records
+		query = query.Unscoped().Where("deleted_at IS NOT NULL")
+	case includeDeleted:
+		// Show all records (active + deleted)
 		query = query.Unscoped()
+	default:
+		// Default: active only (GORM soft-delete filter applies automatically)
 	}
 
 	var total int64
@@ -119,15 +170,17 @@ func (uc *UserController) ListUsers(c *gin.Context) {
 		return
 	}
 
+	// Batch-fetch progress
+	userIDs := make([]uint, len(users))
+	for i, u := range users {
+		userIDs[i] = u.Id
+	}
+	solvedMap := batchSolvedCounts(uc.Db, userIDs)
+	totalProbs := totalActiveProblems(uc.Db)
+
 	response := make([]models.UserListResponse, len(users))
 	for i, user := range users {
-		response[i] = models.UserListResponse{
-			ID:        user.Id,
-			Name:      user.Name,
-			Email:     user.Email,
-			IsAdmin:   user.IsAdmin,
-			CreatedAt: user.CreatedAt,
-		}
+		response[i] = toUserListResponse(user, solvedMap[user.Id], totalProbs)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -155,13 +208,8 @@ func (uc *UserController) GetUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, models.UserListResponse{
-		ID:        user.Id,
-		Name:      user.Name,
-		Email:     user.Email,
-		IsAdmin:   user.IsAdmin,
-		CreatedAt: user.CreatedAt,
-	})
+	solvedMap := batchSolvedCounts(uc.Db, []uint{user.Id})
+	c.JSON(http.StatusOK, toUserListResponse(user, solvedMap[user.Id], totalActiveProblems(uc.Db)))
 }
 
 // UpdateUser updates user information (admin only)
@@ -233,13 +281,8 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	adminId, _ := c.Get("userId")
 	log.Printf("Admin %v updated user %d (%s)", adminId, user.Id, user.Email)
 
-	c.JSON(http.StatusOK, models.UserListResponse{
-		ID:        user.Id,
-		Name:      user.Name,
-		Email:     user.Email,
-		IsAdmin:   user.IsAdmin,
-		CreatedAt: user.CreatedAt,
-	})
+	solvedMap := batchSolvedCounts(uc.Db, []uint{user.Id})
+	c.JSON(http.StatusOK, toUserListResponse(user, solvedMap[user.Id], totalActiveProblems(uc.Db)))
 }
 
 // DeleteUser soft deletes a user (admin only)
@@ -371,16 +414,51 @@ func (uc *UserController) RestoreUser(c *gin.Context) {
 	adminId, _ := c.Get("userId")
 	log.Printf("Admin %v restored user %d (%s)", adminId, user.Id, user.Email)
 
+	solvedMap := batchSolvedCounts(uc.Db, []uint{user.Id})
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User restored successfully",
-		"user": models.UserListResponse{
-			ID:        user.Id,
-			Name:      user.Name,
-			Email:     user.Email,
-			IsAdmin:   user.IsAdmin,
-			CreatedAt: user.CreatedAt,
-		},
+		"user":    toUserListResponse(user, solvedMap[user.Id], totalActiveProblems(uc.Db)),
 	})
+}
+
+// PermanentDeleteUser permanently removes a soft-deleted user (admin only).
+// Only allowed on users that are already soft-deleted to prevent accidental data loss.
+func (uc *UserController) PermanentDeleteUser(c *gin.Context) {
+	userId := c.Param("userId")
+
+	var user models.User
+	if err := uc.Db.Unscoped().First(&user, userId).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.AbortWithStatusJSON(http.StatusNotFound, models.ErrorResponse{
+				Error: "user_not_found",
+			})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_retrieve_user",
+		})
+		return
+	}
+
+	// Only allow permanent deletion of already soft-deleted records
+	if !user.DeletedAt.Valid {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "user_not_deleted",
+		})
+		return
+	}
+
+	if err := uc.Db.Unscoped().Delete(&user).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_permanently_delete_user",
+		})
+		return
+	}
+
+	adminId, _ := c.Get("userId")
+	log.Printf("Admin %v permanently deleted user %d (%s)", adminId, user.Id, user.Email)
+
+	c.JSON(http.StatusOK, gin.H{"message": "User permanently deleted"})
 }
 
 // SearchUsers searches users by name or email (admin only)
@@ -407,7 +485,10 @@ func (uc *UserController) SearchUsers(c *gin.Context) {
 	var total int64
 	dbQuery := uc.Db.Model(&models.User{})
 
-	if req.IncludeDeleted {
+	switch {
+	case req.DeletedOnly:
+		dbQuery = dbQuery.Unscoped().Where("deleted_at IS NOT NULL")
+	case req.IncludeDeleted:
 		dbQuery = dbQuery.Unscoped()
 	}
 
@@ -436,15 +517,16 @@ func (uc *UserController) SearchUsers(c *gin.Context) {
 		return
 	}
 
+	userIDs := make([]uint, len(users))
+	for i, u := range users {
+		userIDs[i] = u.Id
+	}
+	solvedMap := batchSolvedCounts(uc.Db, userIDs)
+	totalProbs := totalActiveProblems(uc.Db)
+
 	response := make([]models.UserListResponse, len(users))
 	for i, user := range users {
-		response[i] = models.UserListResponse{
-			ID:        user.Id,
-			Name:      user.Name,
-			Email:     user.Email,
-			IsAdmin:   user.IsAdmin,
-			CreatedAt: user.CreatedAt,
-		}
+		response[i] = toUserListResponse(user, solvedMap[user.Id], totalProbs)
 	}
 
 	c.JSON(http.StatusOK, models.NewPaginatedResponse(response, total, req.Page, limit))

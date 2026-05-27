@@ -11,6 +11,7 @@ import {
   UsersIcon,
   ClipboardDocumentListIcon,
   TrophyIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import { useUser } from '../contexts/UserContext';
 import { useTheme } from '../hooks/useTheme';
@@ -87,10 +88,14 @@ function Sidebar({ open = false, onClose = () => {} }) {
       >
 
       <nav className="flex-1 space-y-1 py-2">
-        <Link to="/" className={linkClass('/')} title="Home" onClick={onClose}>
+        <button
+          onClick={() => { navigate('/', { replace: true }); onClose(); }}
+          className={linkClass('/')}
+          title="Home"
+        >
           <HomeIcon className="h-6 w-6 flex-shrink-0" />
           <span className="text-sm">Home</span>
-        </Link>
+        </button>
 
         <Link to="/submissions" className={linkClass('/submissions')} title="Submissions" onClick={onClose}>
           <ClipboardDocumentIcon className="h-6 w-6 flex-shrink-0" />
@@ -126,6 +131,11 @@ function Sidebar({ open = false, onClose = () => {} }) {
             <Link to="/admin/submissions" className={linkClass('/admin/submissions')} title="All Submissions" onClick={onClose}>
               <ClipboardDocumentListIcon className="h-6 w-6 flex-shrink-0" />
               <span className="text-sm">All Submissions</span>
+            </Link>
+
+            <Link to="/admin/trash" className={linkClass('/admin/trash')} title="Trash" onClick={onClose}>
+              <TrashIcon className="h-6 w-6 flex-shrink-0" />
+              <span className="text-sm">Trash</span>
             </Link>
           </>
         )}

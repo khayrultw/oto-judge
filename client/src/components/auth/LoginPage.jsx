@@ -29,7 +29,7 @@ const LoginPage = () => {
         });
       }
 
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (err) {
       if (err.response && err.response.data && err.response.data.error) {
         setError(err.response.data.error);
@@ -78,6 +78,9 @@ const LoginPage = () => {
         <p className="mt-3 text-center text-xs text-gray-900 dark:text-white">
           Don't have an account?{' '}
           <Link to="/register" className="text-blue-500 dark:text-blue-400 hover:underline">Register</Link>
+        </p>
+        <p className="mt-2 text-center text-xs text-gray-900 dark:text-white">
+          <Link to="/forgot-password" className="text-blue-500 dark:text-blue-400 hover:underline">Forgot password?</Link>
         </p>
       </div>
     </div>

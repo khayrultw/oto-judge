@@ -13,6 +13,8 @@ import ViewContest from './components/contests/ViewContest';
 import LoginPage from './components/auth/LoginPage';
 import RegistrationPage from './components/auth/RegistrationPage';
 import ProfilePage from './components/auth/ProfilePage';
+import ForgotPasswordPage from './components/auth/ForgotPasswordPage';
+import ResetPasswordPage from './components/auth/ResetPasswordPage';
 import { UserProvider, useUser } from "./contexts/UserContext";
 import repo from './data/Repo';
 import ContestSubmissions from './components/contests/ContestSubmissions';
@@ -21,6 +23,8 @@ import GuidelinePage from './components/Guideline';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AdminUsersPage from './components/admin/AdminUsersPage';
 import AdminSubmissionsPage from './components/admin/AdminSubmissionsPage';
+import AdminResetTokensPage from './components/admin/AdminResetTokensPage';
+import AdminTrashPage from './components/admin/AdminTrashPage';
 
 // Loading component
 const LoadingSpinner = () => (
@@ -117,7 +121,9 @@ function AppLayout({ isLoggedIn }) {
     if (pathname.startsWith('/guidelines')) return 'Guidelines';
     if (pathname === '/admin') return 'Admin Dashboard';
     if (pathname.startsWith('/admin/users')) return 'Admin Users';
+    if (pathname.startsWith('/admin/trash')) return 'Trash';
     if (pathname.startsWith('/admin/submissions')) return 'Admin Submissions';
+    if (pathname.startsWith('/admin/reset-tokens')) return 'Reset Requests';
     if (pathname.startsWith('/contests')) return 'Contests';
     return 'Oto Judge';
   };
@@ -161,6 +167,8 @@ function AppLayout({ isLoggedIn }) {
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegistrationPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             
             {/* Protected routes */}
             <Route element={<ProtectedRoute allowedRoles={["admin", "user"]} />}>
@@ -180,9 +188,11 @@ function AppLayout({ isLoggedIn }) {
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/admin/trash" element={<AdminTrashPage />} />
               <Route path="/contests" element={<ContestsPage />} />
               <Route path="/contests/:id" element={<ContestDetailsPage />} />
               <Route path="/admin/submissions" element={<AdminSubmissionsPage />} />
+              <Route path="/admin/reset-tokens" element={<AdminResetTokensPage />} />
             </Route>
 
             {/* Catch all route - redirect to home or login */}

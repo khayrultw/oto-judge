@@ -31,6 +31,8 @@ export const getAllSubmissions = () => api.get('/submissions');
 // Submissions (admin-only)
 export const rejudgeSubmission = (id) => api.post(`/admin/submissions/${id}/rejudge`);
 export const deleteSubmission = (id) => api.delete(`/admin/submissions/${id}`);
+export const restoreSubmission = (id) => api.post(`/admin/submissions/${id}/restore`);
+export const permanentDeleteSubmission = (id) => api.delete(`/admin/submissions/${id}/permanent`);
 export const manualJudgeSubmission = (id, payload) => api.patch(`/admin/submissions/${id}/manual-judge`, payload);
 
 // Contests (public)
@@ -66,6 +68,7 @@ export const updateUser = (id, payload) => api.put(`/admin/users/${id}`, payload
 export const updateUserPassword = (id, payload) => api.put(`/admin/users/${id}/password`, payload);
 export const deleteUser = (id) => api.delete(`/admin/users/${id}`);
 export const restoreUser = (id) => api.post(`/admin/users/${id}/restore`);
+export const permanentDeleteUser = (id) => api.delete(`/admin/users/${id}/permanent`);
 
 // Submissions (admin-only)
 export const getAdminSubmissions = (params) => api.get('/admin/submissions', { params });
@@ -84,6 +87,13 @@ export const logout = async () => {
   localStorage.removeItem(key);
   return api.get('/logout');
 };
+export const requestPasswordReset = (payload) => api.post('/request-reset', payload);
+export const resetPassword = (payload) => api.post('/reset-password', payload);
+export const changePassword = (payload) => api.post('/change-password', payload);
+
+// Password reset tokens (admin-only)
+export const getResetTokens = () => api.get('/admin/reset-tokens');
+export const revokeResetToken = (id) => api.delete(`/admin/reset-tokens/${id}`);
 
 const Repo = {
   // Submissions
@@ -95,6 +105,8 @@ const Repo = {
   // Submissions (admin-only)
   rejudgeSubmission,
   deleteSubmission,
+  restoreSubmission,
+  permanentDeleteSubmission,
   manualJudgeSubmission,
   getAdminSubmissions,
   // Contests (public)
@@ -126,11 +138,17 @@ const Repo = {
   updateUserPassword,
   deleteUser,
   restoreUser,
+  permanentDeleteUser,
   // Auth
   register,
   login,
   getUser,
   logout,
+  requestPasswordReset,
+  resetPassword,
+  changePassword,
+  getResetTokens,
+  revokeResetToken,
 };
 
 export default Repo; 

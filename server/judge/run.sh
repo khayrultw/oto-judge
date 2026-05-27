@@ -3,7 +3,7 @@
 COMPILED_CODE="$1"
 INPUT_STRING="$2"  
 LANG="$3"
-TIME_LIMIT="${4:-4.0}"       # Time limit in seconds (default 2.0)
+TIME_LIMIT="${4:-5.0}"       # Time limit in seconds (default 2.0)
 MEM_LIMIT="${5:-256}M"       # Memory limit in MB (default 256)
 
 # If $5 was provided, append M; otherwise MEM_LIMIT is already "256M"
@@ -31,9 +31,9 @@ cleanup() {
 trap cleanup EXIT
 
 actual_output=$(
-    $RUN_CMD < "$INPUT_STRING" 2>"$ERROR_OUTPUT"
+    systemd-run --quiet --user --scope -p MemoryMax=$MEM_LIMIT \
+    timeout $TIME_LIMIT $RUN_CMD < "$INPUT_STRING" 2>"$ERROR_OUTPUT"
 )
-
 exit_code=$?
 
 if [[ $exit_code -eq 124 ]]; then
@@ -56,5 +56,5 @@ if [[ -s "$ERROR_OUTPUT" ]]; then
     cat "$ERROR_OUTPUT" >&2
     exit 1
 fi
-cat "$COMPILED_CODE"
+
 echo -e "$actual_output"

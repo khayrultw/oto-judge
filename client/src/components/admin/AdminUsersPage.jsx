@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
@@ -11,6 +11,8 @@ import {
   ShieldCheckIcon,
   UserIcon,
   XMarkIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import repo from '../../data/Repo';
 import { notify } from '../../utils/feedback';
@@ -220,6 +222,9 @@ const UserRow = ({ user, onEdit, onDelete, onRestore, isDeleted }) => (
       </span>
     </td>
     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+      {user.solved_count ?? 0} / {user.total_problems ?? 0}
+    </td>
+    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
       {formatDate(user.created_at)}
     </td>
     <td className="px-4 py-3">
@@ -264,6 +269,8 @@ const AdminUsersPage = () => {
   const [total, setTotal] = useState(0);
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [filterAdmin, setFilterAdmin] = useState('all'); // 'all', 'admin', 'user'
+  const [sortField, setSortField] = useState(null); // null | 'name' | 'progress'
+  const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc'
   const pageSize = 20;
 
   // Modal states
@@ -413,8 +420,35 @@ const AdminUsersPage = () => {
 
   const totalPages = Math.ceil(total / pageSize);
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const sortedUsers = useMemo(() => {
+    if (!sortField) return users;
+    return [...users].sort((a, b) => {
+      let aVal, bVal;
+      if (sortField === 'name') {
+        aVal = (a.name || '').toLowerCase();
+        bVal = (b.name || '').toLowerCase();
+      } else {
+        // progress: sort by solved_count, then total_problems as tiebreaker
+        aVal = a.solved_count ?? 0;
+        bVal = b.solved_count ?? 0;
+      }
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [users, sortField, sortDir]);
+
   // Display users directly (API now handles filtering)
-  const displayedUsers = users;
+  const displayedUsers = sortedUsers;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -500,11 +534,34 @@ const AdminUsersPage = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      User
+                    <th
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200"
+                      onClick={() => handleSort('name')}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        User
+                        {sortField === 'name' ? (
+                          sortDir === 'asc' ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />
+                        ) : (
+                          <span className="h-3 w-3 text-gray-300 dark:text-gray-600">⇅</span>
+                        )}
+                      </span>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Role
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200"
+                      onClick={() => handleSort('progress')}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        Progress
+                        {sortField === 'progress' ? (
+                          sortDir === 'asc' ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />
+                        ) : (
+                          <span className="h-3 w-3 text-gray-300 dark:text-gray-600">⇅</span>
+                        )}
+                      </span>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Created At

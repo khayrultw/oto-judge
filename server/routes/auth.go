@@ -13,4 +13,9 @@ func RegisterAuthRoutes(r *gin.RouterGroup) {
 	r.GET("/me", middleware.RequireAuth, authController.GetUser)
 	r.POST("/login", authController.Login)
 	r.GET("/logout", authController.Logout)
+
+	resetController := controllers.NewResetController()
+	r.POST("/request-reset", resetController.RequestReset)
+	r.POST("/reset-password", resetController.ResetPassword)
+	r.POST("/change-password", middleware.RequireAuth, resetController.ChangePassword)
 }

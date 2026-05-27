@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import repo from '../../data/Repo';
+import AIPolicyBanner from '../common/AIPolicyBanner';
 
 function ViewContest() {
   const { id } = useParams();
@@ -78,23 +79,25 @@ function ViewContest() {
             My Submissions
           </button>
           <button
-            className="bg-blue-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-blue-600 whitespace-normal col-span-2 sm:col-span-1"
+            className="bg-blue-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-blue-600 whitespace-normal"
             onClick={() => navigate(`/standings/${id}`)}
           >
             Standings
           </button>
+          <button
+            className="bg-gray-500 text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm hover:bg-gray-600 whitespace-normal col-span-2 sm:col-span-1"
+            onClick={() => navigate('/guidelines')}
+          >
+            Guidelines
+          </button>
         </div>
       </div>
-      <div className="mb-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100">
-        Use of generative AI tools (ChatGPT, Claude, DeepSeek, etc.) is strictly prohibited. You may only browse programming language documentation.
+      <AIPolicyBanner className="mb-3" />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4 text-sm text-gray-600 dark:text-gray-400">
+        <span><strong>Start:</strong> {contest.start_time && new Date(contest.start_time).toLocaleString()}</span>
+        <span><strong>Duration:</strong> {contest.duration} min</span>
+        <span className="font-semibold text-blue-600 dark:text-blue-400">{remaining}</span>
       </div>
-      <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">
-        <strong>Start:</strong> {contest.start_time && new Date(contest.start_time).toLocaleString()}
-      </div>
-      <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">
-        <strong>Duration:</strong> {contest.duration} min
-      </div>
-      <div className="mb-4 text-blue-600 dark:text-blue-400 font-semibold text-base">{remaining}</div>
       <h2 className="font-bold mb-3 text-lg text-gray-900 dark:text-white">Problems</h2>
       <div className="space-y-1.5">
         {problems
@@ -103,7 +106,7 @@ function ViewContest() {
             <div
               key={problem.id}
               className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded shadow-sm cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-700 flex items-center gap-2 sm:gap-3 border border-gray-200 dark:border-gray-700"
-              onClick={() => navigate(`/problem/${problem.id}`)}
+              onClick={() => navigate(`/contest/${id}/problem/${problem.id}`)}
             >
               <span className="font-semibold text-sm text-gray-900 dark:text-white">
                 Problem {(problem.problem_number ?? idx) + 1}

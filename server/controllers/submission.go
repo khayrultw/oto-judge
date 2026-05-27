@@ -297,6 +297,14 @@ func (sc *SubmissionController) ListAllSubmissions(c *gin.Context) {
 		Joins("LEFT JOIN users ON users.id = submissions.user_id").
 		Joins("LEFT JOIN problems ON problems.id = submissions.problem_id")
 
+	if req.DeletedOnly {
+		// Trash view: only soft-deleted records
+		query = query.Unscoped().Where("submissions.deleted_at IS NOT NULL")
+	} else {
+		// Active view: exclude soft-deleted records explicitly
+		query = query.Where("submissions.deleted_at IS NULL")
+	}
+
 	// Apply filters
 	if req.ContestID > 0 {
 		query = query.Where("submissions.contest_id = ?", req.ContestID)
@@ -345,7 +353,7 @@ func (sc *SubmissionController) ListAllSubmissions(c *gin.Context) {
 
 	response := make([]models.SubmissionWithProblem, len(results))
 	for i, r := range results {
-		response[i] = models.SubmissionWithProblem{
+		sub := models.SubmissionWithProblem{
 			ID:           r.Id,
 			UserId:       r.UserId,
 			UserName:     r.UserName,
@@ -357,6 +365,11 @@ func (sc *SubmissionController) ListAllSubmissions(c *gin.Context) {
 			Message:      r.Message,
 			CreatedAt:    r.CreatedAt,
 		}
+		if r.DeletedAt.Valid {
+			t := r.DeletedAt.Time.Format(time.RFC3339)
+			sub.DeletedAt = &t
+		}
+		response[i] = sub
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -408,6 +421,83 @@ func (sc *SubmissionController) DeleteSubmission(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Submission deleted successfully",
 	})
+}
+
+// RestoreSubmission restores a soft-deleted submission (admin only)
+func (sc *SubmissionController) RestoreSubmission(c *gin.Context) {
+	submissionId := c.Param("submissionId")
+
+	var submission models.Submission
+	if err := sc.Db.Unscoped().First(&submission, submissionId).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.AbortWithStatusJSON(http.StatusNotFound, models.ErrorResponse{
+				Error: "submission_not_found",
+			})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_retrieve_submission",
+		})
+		return
+	}
+
+	if !submission.DeletedAt.Valid {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "submission_not_deleted",
+		})
+		return
+	}
+
+	if err := sc.Db.Unscoped().Model(&submission).Update("deleted_at", nil).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_restore_submission",
+		})
+		return
+	}
+
+	adminId, _ := c.Get("userId")
+	log.Printf("Admin %v restored submission %d", adminId, submission.Id)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Submission restored successfully"})
+}
+
+// PermanentDeleteSubmission permanently removes a soft-deleted submission (admin only).
+// Only allowed on submissions that are already soft-deleted.
+func (sc *SubmissionController) PermanentDeleteSubmission(c *gin.Context) {
+	submissionId := c.Param("submissionId")
+
+	var submission models.Submission
+	if err := sc.Db.Unscoped().First(&submission, submissionId).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.AbortWithStatusJSON(http.StatusNotFound, models.ErrorResponse{
+				Error: "submission_not_found",
+			})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_retrieve_submission",
+		})
+		return
+	}
+
+	if !submission.DeletedAt.Valid {
+		c.AbortWithStatusJSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "submission_not_deleted",
+		})
+		return
+	}
+
+	if err := sc.Db.Unscoped().Delete(&submission).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "failed_to_permanently_delete_submission",
+		})
+		return
+	}
+
+	adminId, _ := c.Get("userId")
+	log.Printf("Admin %v permanently deleted submission %d", adminId, submission.Id)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Submission permanently deleted"})
 }
 
 // RejudgeSubmission reruns the judge on a submission (admin only)

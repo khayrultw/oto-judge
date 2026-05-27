@@ -824,7 +824,6 @@ func (cc *ContestController) GetStandings(c *gin.Context) {
 
 	sortAndRankStandings(standings)
 
-	// Apply pagination to standings
 	total := int64(len(standings))
 	offset := req.GetOffset()
 	limit := req.GetLimit()
@@ -898,7 +897,6 @@ func (cc *ContestController) GetContests(c *gin.Context) {
 	var total int64
 	query := cc.Db.Model(&models.Contest{})
 
-	// Apply status filter
 	now := time.Now().UTC()
 	switch req.Status {
 	case "upcoming":
@@ -909,10 +907,8 @@ func (cc *ContestController) GetContests(c *gin.Context) {
 		query = query.Where("start_time + (duration * interval '1 minute') <= ?", now)
 	}
 
-	// Count total
 	query.Count(&total)
 
-	// Apply pagination
 	offset := req.GetOffset()
 	limit := req.GetLimit()
 

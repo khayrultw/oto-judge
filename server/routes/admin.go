@@ -23,6 +23,7 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 		admin.PUT("/users/:userId/password", userController.UpdateUserPassword)
 		admin.DELETE("/users/:userId", userController.DeleteUser)
 		admin.POST("/users/:userId/restore", userController.RestoreUser)
+		admin.DELETE("/users/:userId/permanent", userController.PermanentDeleteUser)
 
 		// Contest management (admin-specific)
 		contestController := controllers.NewContestController()
@@ -41,7 +42,14 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 		submissionController := controllers.NewSubmissionController()
 		admin.GET("/submissions", submissionController.ListAllSubmissions)
 		admin.DELETE("/submissions/:submissionId", submissionController.DeleteSubmission)
+		admin.POST("/submissions/:submissionId/restore", submissionController.RestoreSubmission)
+		admin.DELETE("/submissions/:submissionId/permanent", submissionController.PermanentDeleteSubmission)
 		admin.POST("/submissions/:submissionId/rejudge", submissionController.RejudgeSubmission)
 		admin.PATCH("/submissions/:submissionId/manual-judge", submissionController.ManualJudgeSubmission)
+
+		// Password reset token management
+		resetController := controllers.NewResetController()
+		admin.GET("/reset-tokens", resetController.ListResetTokens)
+		admin.DELETE("/reset-tokens/:id", resetController.RevokeResetToken)
 	}
 }

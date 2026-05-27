@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import repo, { BASE_URL, key } from '../../data/Repo';
 import { useNavigate, useParams } from 'react-router-dom';
 import StandingsTable from './StandingsTable';
+import AIPolicyBanner from '../common/AIPolicyBanner';
 
 const StandingsPage = () => {
   const [standings, setStandings] = useState([]);
@@ -82,9 +83,7 @@ const StandingsPage = () => {
           </div>
         </div>
 
-        <div className="mb-3 rounded border border-amber-200 bg-amber-50 px-2 sm:px-3 py-2 text-xs sm:text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100 break-words">
-          Use of generative AI tools (ChatGPT, Claude, DeepSeek, etc.) is strictly prohibited. You may only browse programming language documentation.
-        </div>
+        <AIPolicyBanner className="mb-3" />
       </div>
       {loading ? (
         <div className="w-full max-w-5xl mx-auto px-1 sm:px-2 text-sm text-gray-600 dark:text-gray-400">Loading...</div>
